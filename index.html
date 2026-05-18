@@ -522,36 +522,22 @@
     .footer { font-size: 16px; margin-top: 10px; }
   }
 
-  /* Print styles — clean weekly schedule on paper, landscape recommended */
+  /* Print — only the table, one page */
   @media print {
-    @page { size: A4 landscape; margin: 12mm; }
+    @page { size: A4 landscape; margin: 8mm; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    body {
+    html, body {
       background: white !important;
       padding: 0 !important;
+      margin: 0 !important;
       color: #1a1a1a !important;
+      width: 100% !important;
+      height: 100% !important;
     }
     body::before, body::after, .floating-cat,
-    .actions, .hint, .paw-reset, .draggable-paw,
-    .cat-hero, .footer, .legend, .paws,
-    .header-cat-img { display: none !important; }
+    header, .legend, .cat-hero, .footer, .paws { display: none !important; }
 
-    .container { max-width: 100%; }
-    header {
-      background: none !important;
-      box-shadow: none !important;
-      border: none !important;
-      padding: 0 0 10px 0 !important;
-      margin-bottom: 8px !important;
-      border-bottom: 2px solid #333 !important;
-    }
-    .header-left { gap: 0 !important; }
-    h1 {
-      font-family: 'Caveat', cursive;
-      font-size: 28px !important;
-      color: #1a1a1a !important;
-    }
-    .week-range { color: #444 !important; font-size: 14px !important; }
+    .container { max-width: 100%; padding: 0 !important; margin: 0 !important; }
 
     .calendar {
       background: white !important;
@@ -560,34 +546,38 @@
       border: 1.5px solid #333 !important;
       overflow: visible !important;
       page-break-inside: avoid;
+      margin: 0 !important;
     }
     .day-headers, .body-grid {
-      grid-template-columns: 50px repeat(5, 1fr) !important;
+      grid-template-columns: 42px repeat(5, 1fr) !important;
       gap: 0 !important;
       width: 100% !important;
       min-width: 0 !important;
+      margin-bottom: 0 !important;
     }
     .day-header {
       background: #f0f0f0 !important;
       color: #1a1a1a !important;
       border: 1px solid #999 !important;
       border-radius: 0 !important;
-      padding: 6px 4px !important;
+      padding: 4px 4px !important;
       box-shadow: none !important;
+      font-size: 11px !important;
     }
     .day-header.today { background: #ddd !important; }
     .day-header .day-name, .day-header .day-date { color: #1a1a1a !important; }
+    .day-header .day-date { font-size: 9px !important; margin-top: 1px !important; }
     .day-header.time-corner {
       background: #e8e8e8 !important;
       color: #333 !important;
-      font-size: 14px !important;
+      font-size: 12px !important;
     }
     .time-column { position: static !important; background: white !important; }
     .time-mark {
       background: white !important;
       color: #333 !important;
-      font-size: 10px !important;
-      padding: 0 4px !important;
+      font-size: 9px !important;
+      padding: 0 3px !important;
     }
     .day-column {
       background: white !important;
@@ -597,16 +587,18 @@
       position: relative !important;
     }
     .day-column.today { background: #fafafa !important; box-shadow: inset 2px 0 0 #555 !important; }
-    .hour-line { background: rgba(0,0,0,0.15) !important; }
+    .hour-line { background: rgba(0,0,0,0.18) !important; }
     .half-line { background: rgba(0,0,0,0.06) !important; }
     .event {
       border: 1px solid #888 !important;
-      border-radius: 4px !important;
+      border-radius: 3px !important;
       box-shadow: none !important;
       color: #111 !important;
-      font-size: 9px !important;
-      padding: 2px 4px !important;
+      font-size: 8px !important;
+      padding: 1px 3px !important;
       page-break-inside: avoid;
+      left: 1px !important;
+      right: 1px !important;
     }
     .event.work    { background: #d4e8ea !important; }
     .event.meal    { background: #fae3b8 !important; }
@@ -614,7 +606,7 @@
     .event.rest    { background: #e5cfb8 !important; }
     .event.study   { background: #ecc4b8 !important; }
     .event.cat     { background: #ffd4b0 !important; }
-    .event .event-emoji { font-size: 10px !important; }
+    .event .event-emoji { font-size: 9px !important; }
     .event .event-time { font-size: 8px !important; opacity: 0.85 !important; color: #333 !important; }
     .event .event-delete { display: none !important; }
   }
@@ -1124,6 +1116,28 @@
     document.getElementById("clearBtn").addEventListener("click", clearAll);
     document.getElementById("printBtn").addEventListener("click", () => window.print());
     initDraggablePaw();
+
+    // Print sizing — compress hour height so the whole table fits one A4 landscape page
+    let savedHourPx = null;
+    function rebuildForPrint(hourPx) {
+      document.documentElement.style.setProperty('--hour-px', hourPx);
+      buildTimeColumn();
+      buildDayColumns();
+      document.querySelectorAll(".day-column").forEach(bindColumnDrag);
+      renderEvents();
+    }
+    window.addEventListener("beforeprint", () => {
+      savedHourPx = getComputedStyle(document.documentElement).getPropertyValue('--hour-px').trim() || '56px';
+      rebuildForPrint('38px');
+    });
+    window.addEventListener("afterprint", () => {
+      document.documentElement.style.removeProperty('--hour-px');
+      buildTimeColumn();
+      buildDayColumns();
+      document.querySelectorAll(".day-column").forEach(bindColumnDrag);
+      renderEvents();
+      savedHourPx = null;
+    });
 
     generateWeek();
 

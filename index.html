@@ -277,47 +277,6 @@
     box-shadow: inset 3px 0 0 var(--coral);
   }
 
-  /* Current time indicator — spans whole calendar row, label sits in time column */
-  .now-line {
-    position: absolute;
-    left: 60px;
-    right: 0;
-    height: 2px;
-    background: var(--coral);
-    z-index: 4;
-    pointer-events: none;
-    box-shadow: 0 0 8px rgba(214, 136, 118, 0.5);
-    border-radius: 1px;
-  }
-  .now-line::before {
-    content: '';
-    position: absolute;
-    left: -4px;
-    top: -3px;
-    width: 8px;
-    height: 8px;
-    background: var(--coral);
-    border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(214, 136, 118, 0.25);
-  }
-  .now-label {
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    background: var(--coral);
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 0;
-    border-radius: 8px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    transform: translateY(-50%);
-    z-index: 6;
-    box-shadow: 0 2px 6px rgba(214, 136, 118, 0.4);
-  }
-  .time-mark.hidden-now { visibility: hidden; }
-
   .hour-line {
     position: absolute;
     left: 0;
@@ -525,8 +484,6 @@
       z-index: 5;
     }
     .time-column { background: rgba(255, 252, 245, 0.95); }
-    .now-line { left: 44px; }
-    .now-label { font-size: 10px; padding: 2px 0; }
     h1 { font-size: 22px; }
     header { padding: 10px 14px; gap: 8px; margin-bottom: 12px; flex-wrap: nowrap; align-items: flex-start; }
     .header-cat-img { width: 44px; height: 44px; border-width: 2px; }
@@ -576,7 +533,7 @@
     }
     body::before, body::after, .floating-cat,
     .actions, .hint, .paw-reset, .draggable-paw,
-    .cat-hero, .footer, .legend, .now-line, .now-label, .paws,
+    .cat-hero, .footer, .legend, .paws,
     .header-cat-img { display: none !important; }
 
     .container { max-width: 100%; }
@@ -632,7 +589,6 @@
       font-size: 10px !important;
       padding: 0 4px !important;
     }
-    .time-mark.hidden-now { visibility: visible !important; }
     .day-column {
       background: white !important;
       border: 1px solid #ccc !important;
@@ -860,41 +816,6 @@
     });
   }
 
-  // Current-time indicator — line spans across all day columns, label in time column
-  function updateNowLine() {
-    document.querySelectorAll(".now-line, .now-label").forEach(el => el.remove());
-    document.querySelectorAll(".time-mark.hidden-now").forEach(el => el.classList.remove("hidden-now"));
-    // Only show if there's a "today" column visible in the week
-    if (!document.querySelector(".day-column.today")) return;
-    const now = new Date();
-    const minutesFromStart = (now.getHours() - START_HOUR) * 60 + now.getMinutes();
-    if (minutesFromStart < 0 || minutesFromStart > TOTAL_MIN) return;
-    const y = minutesFromStart * pxPerMin();
-
-    // Line across all day columns
-    const line = document.createElement("div");
-    line.className = "now-line";
-    line.style.top = y + "px";
-    document.querySelector(".body-grid").appendChild(line);
-
-    // Label in time column
-    const label = document.createElement("div");
-    label.className = "now-label";
-    label.style.top = y + "px";
-    const h = now.getHours();
-    const m = now.getMinutes();
-    const ampm = h < 12 ? 'am' : 'pm';
-    const dispH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    label.textContent = `${dispH}:${m.toString().padStart(2,'0')}${ampm}`;
-    document.querySelector(".time-column").appendChild(label);
-
-    // Hide the time-mark close to the now-label to avoid visual overlap
-    document.querySelectorAll(".time-mark").forEach(mark => {
-      const markTop = parseFloat(mark.style.top);
-      if (Math.abs(markTop - y) < 22) mark.classList.add("hidden-now");
-    });
-  }
-
   // ===== Events render =====
   function renderEvents() {
     // Remove all event cards (use calendar-wide selector so nothing slips through)
@@ -918,7 +839,6 @@
       col.appendChild(el);
     });
     updatePawsVisibility();
-    updateNowLine();
   }
 
   function escapeHtml(s) {
@@ -1206,19 +1126,6 @@
     initDraggablePaw();
 
     generateWeek();
-
-    // Scroll calendar so the now-line is roughly centered
-    requestAnimationFrame(() => {
-      const nowLine = document.querySelector(".now-line");
-      if (nowLine) {
-        const top = parseFloat(nowLine.style.top || "0");
-        const targetY = document.querySelector(".calendar").offsetTop + top - window.innerHeight / 2 + 100;
-        window.scrollTo({ top: Math.max(0, targetY), behavior: "instant" });
-      }
-    });
-
-    // Refresh now-line every minute
-    setInterval(updateNowLine, 60000);
 
     // Rebuild on resize (hour-px may change)
     let resizeTimer;

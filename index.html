@@ -651,7 +651,7 @@
       <div>
         <h1>my cozy week <span class="draggable-paw" id="draggablePaw">🐾</span></h1>
         <div class="week-range" id="weekRange"></div>
-        <div class="hint">pick a task ↓ then <kbd>drag</kbd> the time on a column · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
+        <div class="hint">pick a task ↓ <kbd>drag</kbd> empty time to add · <kbd>click</kbd> event to change task · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
       </div>
     </div>
     <div class="actions">
@@ -998,14 +998,23 @@
     col.addEventListener("touchstart", e => startDrag(e, col), { passive: false });
   }
 
-  // ===== Event click (delete via × button only) =====
+  // ===== Event click — × deletes, body click recategorizes to selected task =====
   function bindEventClicks() {
     document.addEventListener("click", e => {
-      if (e.target.dataset.action !== "delete") return;
       const eventEl = e.target.closest(".event");
       if (!eventEl) return;
       const id = parseInt(eventEl.dataset.id);
-      events = events.filter(ev => ev.id !== id);
+      if (e.target.dataset.action === "delete") {
+        events = events.filter(ev => ev.id !== id);
+        renderEvents();
+        return;
+      }
+      // Click body → swap to currently selected task chip
+      const ev = events.find(ev => ev.id === id);
+      if (!ev) return;
+      ev.task = selectedTask.label;
+      ev.category = selectedTask.category;
+      ev.emoji = selectedTask.emoji;
       renderEvents();
     });
   }

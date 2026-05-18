@@ -720,8 +720,8 @@
   const END_HOUR = 23;
   const TOTAL_HOURS = END_HOUR - START_HOUR; // 16
   const TOTAL_MIN = TOTAL_HOURS * 60;        // 960
-  const SNAP_MIN = 15;
-  const MIN_EVENT_MIN = 15;
+  const SNAP_MIN = 30;
+  const MIN_EVENT_MIN = 30;
   const DAYS = [
     { name: "Mon", emoji: "🌿" },
     { name: "Tue", emoji: "☕" },
@@ -888,10 +888,10 @@
     label.textContent = `${dispH}:${m.toString().padStart(2,'0')}${ampm}`;
     document.querySelector(".time-column").appendChild(label);
 
-    // Hide the time-mark closest to the now-label to avoid overlap
+    // Hide the time-mark close to the now-label to avoid visual overlap
     document.querySelectorAll(".time-mark").forEach(mark => {
       const markTop = parseFloat(mark.style.top);
-      if (Math.abs(markTop - y) < 18) mark.classList.add("hidden-now");
+      if (Math.abs(markTop - y) < 22) mark.classList.add("hidden-now");
     });
   }
 

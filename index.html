@@ -425,7 +425,7 @@
   .event.cat     { background: linear-gradient(135deg, #ffd4b0 0%, #ffbf90 100%); }
 
   /* Ghost (drag preview) */
-  .ghost {
+  .drag-ghost {
     position: absolute;
     left: 4px;
     right: 4px;
@@ -897,9 +897,8 @@
 
   // ===== Events render =====
   function renderEvents() {
-    document.querySelectorAll(".day-column").forEach(col => {
-      col.querySelectorAll(".event").forEach(e => e.remove());
-    });
+    // Remove all event cards (use calendar-wide selector so nothing slips through)
+    document.querySelectorAll(".calendar .event").forEach(e => e.remove());
 
     const ppm = pxPerMin();
     events.forEach(ev => {
@@ -957,7 +956,7 @@
     };
     if (!isTouch) {
       const ghost = document.createElement("div");
-      ghost.className = "ghost";
+      ghost.className = "drag-ghost";
       col.appendChild(ghost);
       dragState.ghost = ghost;
       updateGhost();
@@ -990,7 +989,7 @@
       // Vertical drag confirmed
       dragState.confirmed = true;
       const ghost = document.createElement("div");
-      ghost.className = "ghost";
+      ghost.className = "drag-ghost";
       dragState.col.appendChild(ghost);
       dragState.ghost = ghost;
     }
@@ -1104,6 +1103,13 @@
 
   function clearAll() {
     events = [];
+    // Cancel any in-progress drag so its ghost gets cleaned up
+    if (dragState) {
+      if (dragState.ghost) dragState.ghost.remove();
+      dragState = null;
+    }
+    // Defensive: remove any stray event cards or drag-ghosts left over from interrupted interactions
+    document.querySelectorAll(".calendar .event, .calendar .drag-ghost").forEach(el => el.remove());
     renderEvents();
   }
 

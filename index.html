@@ -377,11 +377,13 @@
   .event[contenteditable="true"] { outline: 2px solid var(--coral); }
 
   .event.work    { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
-  .event.meal    { background: linear-gradient(135deg, #fae3b8 0%, #f5d495 100%); }
+  .event.sleep   { background: linear-gradient(135deg, #e0d4f5 0%, #c8b8e8 100%); }
   .event.exercise { background: linear-gradient(135deg, #d0e8c0 0%, #b8d8a0 100%); }
-  .event.rest    { background: linear-gradient(135deg, #e5cfb8 0%, #d8be9c 100%); }
-  .event.study   { background: linear-gradient(135deg, #ecc4b8 0%, #e0aa9a 100%); }
   .event.cat     { background: linear-gradient(135deg, #ffd4b0 0%, #ffbf90 100%); }
+  .event.hobby   { background: linear-gradient(135deg, #ffd4d6 0%, #ffb8bc 100%); }
+  .event.study   { background: linear-gradient(135deg, #ecc4b8 0%, #e0aa9a 100%); }
+  .event.chore   { background: linear-gradient(135deg, #c8e8e0 0%, #a8d8cc 100%); }
+  .event.free    { background: linear-gradient(135deg, #fae3b8 0%, #f5d495 100%); }
 
   /* Ghost (drag preview) */
   .drag-ghost {
@@ -401,27 +403,50 @@
     z-index: 5;
   }
 
-  .legend {
+  /* Task selector chips */
+  .task-selector {
     display: flex;
-    gap: 16px;
-    margin-top: 18px;
     flex-wrap: wrap;
-    font-size: 12px;
-    color: var(--text-soft);
+    gap: 6px;
+    margin-bottom: 14px;
     background: rgba(255, 252, 245, 0.7);
-    padding: 14px 22px;
-    border-radius: 16px;
-    font-weight: 600;
+    padding: 10px;
+    border-radius: 18px;
     border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 14px rgba(91, 58, 42, 0.08);
   }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(91, 58, 42, 0.15);
+  .task-chip {
+    background: white;
+    color: var(--text);
+    border: 2px solid transparent;
+    padding: 7px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(91, 58, 42, 0.08);
   }
+  .task-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(91, 58, 42, 0.14); }
+  .task-chip.selected {
+    border-color: var(--brown);
+    box-shadow: 0 4px 12px rgba(90, 58, 42, 0.25);
+    transform: translateY(-1px);
+  }
+  .task-chip .task-emoji { font-size: 16px; }
+  .task-chip.work     { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
+  .task-chip.sleep    { background: linear-gradient(135deg, #e0d4f5 0%, #c8b8e8 100%); }
+  .task-chip.exercise { background: linear-gradient(135deg, #d0e8c0 0%, #b8d8a0 100%); }
+  .task-chip.cat      { background: linear-gradient(135deg, #ffd4b0 0%, #ffbf90 100%); }
+  .task-chip.hobby    { background: linear-gradient(135deg, #ffd4d6 0%, #ffb8bc 100%); }
+  .task-chip.study    { background: linear-gradient(135deg, #ecc4b8 0%, #e0aa9a 100%); }
+  .task-chip.chore    { background: linear-gradient(135deg, #c8e8e0 0%, #a8d8cc 100%); }
+  .task-chip.free     { background: linear-gradient(135deg, #fae3b8 0%, #f5d495 100%); }
 
   .cat-hero {
     margin-top: 18px;
@@ -515,6 +540,9 @@
     }
     .event .event-delete { width: 22px; height: 22px; font-size: 14px; top: 3px; right: 3px; }
     .paw { font-size: 18px; }
+    .task-selector { padding: 8px; gap: 5px; margin-bottom: 10px; border-radius: 14px; }
+    .task-chip { padding: 6px 10px; font-size: 11px; border-radius: 12px; gap: 4px; }
+    .task-chip .task-emoji { font-size: 14px; }
     button { padding: 8px 12px; font-size: 11px; border-radius: 14px; }
     .legend { gap: 8px; font-size: 11px; padding: 10px 14px; }
     .cat-hero { height: 110px; margin-top: 14px; }
@@ -535,7 +563,7 @@
       height: 100% !important;
     }
     body::before, body::after, .floating-cat,
-    header, .legend, .cat-hero, .footer, .paws { display: none !important; }
+    header, .task-selector, .cat-hero, .footer, .paws { display: none !important; }
 
     .container { max-width: 100%; padding: 0 !important; margin: 0 !important; }
 
@@ -601,11 +629,13 @@
       right: 1px !important;
     }
     .event.work    { background: #d4e8ea !important; }
-    .event.meal    { background: #fae3b8 !important; }
+    .event.sleep   { background: #e0d4f5 !important; }
     .event.exercise { background: #d0e8c0 !important; }
-    .event.rest    { background: #e5cfb8 !important; }
-    .event.study   { background: #ecc4b8 !important; }
     .event.cat     { background: #ffd4b0 !important; }
+    .event.hobby   { background: #ffd4d6 !important; }
+    .event.study   { background: #ecc4b8 !important; }
+    .event.chore   { background: #c8e8e0 !important; }
+    .event.free    { background: #fae3b8 !important; }
     .event .event-emoji { font-size: 9px !important; }
     .event .event-time { font-size: 8px !important; opacity: 0.85 !important; color: #333 !important; }
     .event .event-delete { display: none !important; }
@@ -621,7 +651,7 @@
       <div>
         <h1>my cozy week <span class="draggable-paw" id="draggablePaw">🐾</span></h1>
         <div class="week-range" id="weekRange"></div>
-        <div class="hint"><kbd>drag</kbd> a column to make an event · <kbd>click</kbd> to edit · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
+        <div class="hint">pick a task ↓ then <kbd>drag</kbd> the time on a column · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
       </div>
     </div>
     <div class="actions">
@@ -630,6 +660,8 @@
       <button id="generateBtn">✨ Generate</button>
     </div>
   </header>
+
+  <div class="task-selector" id="taskSelector"></div>
 
   <div class="calendar">
     <div class="day-headers" id="dayHeaders"></div>
@@ -641,15 +673,6 @@
       <div class="day-column" data-day="3"></div>
       <div class="day-column" data-day="4"></div>
     </div>
-  </div>
-
-  <div class="legend">
-    <div class="legend-item"><span class="legend-dot" style="background:#b8d8dc"></span>💼 Work</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#f5d495"></span>🍰 Meal</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#b8d8a0"></span>🏃 Exercise</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#e0aa9a"></span>📚 Study</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#d8be9c"></span>💤 Rest</div>
-    <div class="legend-item"><span class="legend-dot" style="background:#ffbf90"></span>🐱 Cat Time</div>
   </div>
 
   <div class="cat-hero">
@@ -686,6 +709,40 @@
   // ===== State =====
   let events = [];
   let nextId = 1;
+
+  // 8 selectable tasks — user picks one, then drags time
+  const TASKS = [
+    { id: 'work',      label: 'work',                 emoji: '💼', category: 'work' },
+    { id: 'sleep',     label: 'sleep',                emoji: '😴', category: 'sleep' },
+    { id: 'exercise',  label: 'exercise',             emoji: '🏋️', category: 'exercise' },
+    { id: 'cat',       label: 'play with cat',        emoji: '🐱', category: 'cat' },
+    { id: 'hobby',     label: 'personal hobby',       emoji: '🎨', category: 'hobby' },
+    { id: 'develop',   label: 'personal development', emoji: '📚', category: 'study' },
+    { id: 'cleaning',  label: 'house cleaning',       emoji: '🧹', category: 'chore' },
+    { id: 'ding',      label: '딩똥빵 시간',          emoji: '🎲', category: 'free' },
+  ];
+  let selectedTask = TASKS[0];
+
+  function buildTaskSelector() {
+    const wrap = document.getElementById('taskSelector');
+    wrap.innerHTML = '';
+    TASKS.forEach(t => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `task-chip ${t.category}`;
+      chip.dataset.taskId = t.id;
+      if (t.id === selectedTask.id) chip.classList.add('selected');
+      chip.innerHTML = `<span class="task-emoji">${t.emoji}</span><span class="task-label">${t.label}</span>`;
+      chip.addEventListener('click', () => selectTask(t));
+      wrap.appendChild(chip);
+    });
+  }
+  function selectTask(t) {
+    selectedTask = t;
+    document.querySelectorAll('.task-chip').forEach(c => {
+      c.classList.toggle('selected', c.dataset.taskId === t.id);
+    });
+  }
 
   // ===== Date helpers =====
   function getMonday(d) {
@@ -926,11 +983,13 @@
     const day = dragState.day;
     if (dragState.ghost) dragState.ghost.remove();
     dragState = null;
-    // Generate a task suggestion based on start time
-    const hour = START_HOUR + Math.floor(startMin / 60);
-    const pool = TASK_POOL[hour] || [["New event","rest","✨"]];
-    const [task, category, emoji] = pickRandom(pool);
-    events.push({ id: nextId++, day, startMin, endMin, task, category, emoji });
+    // Use the currently selected task chip
+    events.push({
+      id: nextId++, day, startMin, endMin,
+      task: selectedTask.label,
+      category: selectedTask.category,
+      emoji: selectedTask.emoji
+    });
     renderEvents();
   }
 
@@ -939,75 +998,43 @@
     col.addEventListener("touchstart", e => startDrag(e, col), { passive: false });
   }
 
-  // ===== Event click (edit / delete) =====
+  // ===== Event click (delete via × button only) =====
   function bindEventClicks() {
     document.addEventListener("click", e => {
+      if (e.target.dataset.action !== "delete") return;
       const eventEl = e.target.closest(".event");
       if (!eventEl) return;
       const id = parseInt(eventEl.dataset.id);
-      if (e.target.dataset.action === "delete") {
-        events = events.filter(ev => ev.id !== id);
-        renderEvents();
-        return;
-      }
-      // Edit task text inline
-      const ev = events.find(ev => ev.id === id);
-      if (!ev) return;
-      const taskSpan = eventEl.querySelector(".event-task");
-      const newText = prompt("Edit task:", ev.task);
-      if (newText !== null && newText.trim()) {
-        ev.task = newText.trim();
-        renderEvents();
-      }
+      events = events.filter(ev => ev.id !== id);
+      renderEvents();
     });
   }
 
-  // ===== Generate full week =====
-  const TASK_POOL = {
-    7:  [["Wake up & stretch","exercise","🙆"],["Feed the kitty","cat","🐱"],["Morning workout","exercise","💪"],["Cuddle the cat","cat","🐈"],["Warm breakfast","meal","🥞"]],
-    8:  [["Breakfast","meal","🥐"],["Plan the day","work","📝"],["Read news","study","📰"],["Coffee ☕","rest","☕"],["Cat brushing","cat","🐾"]],
-    9:  [["Deep focus","work","💻"],["Email triage","work","📧"],["Daily standup","work","👥"],["Project planning","work","📊"],["Watch cat nap","cat","😺"]],
-    10: [["Deep focus","work","💻"],["Code review","work","👨‍💻"],["Writing","work","✍️"],["Strategy session","work","🎯"],["Cat photo break","cat","📸"]],
-    11: [["Meeting","work","🗓️"],["Focused task","work","🔍"],["Calls","work","📞"],["Admin tasks","work","📋"],["Pet the cat","cat","🐱"]],
-    12: [["Lunch","meal","🍱"],["Lunch + walk","meal","🥗"],["Lunch break","meal","🍜"],["Quick lunch","meal","🍙"],["Lunch w/ team","meal","🍕"]],
-    13: [["Nap with cat","cat","😴"],["Walk outside","exercise","🚶"],["Slow start","rest","☁️"],["Cat tummy rubs","cat","🐈"],["Catch-up emails","work","📨"]],
-    14: [["Afternoon work","work","💼"],["Build session","work","🛠️"],["Research","study","🔬"],["1:1 meeting","work","🤝"],["Cat watches you","cat","🐱"]],
-    15: [["Coffee break","rest","☕"],["Snack + cat","meal","🍪"],["Quick walk","exercise","🚶"],["Sync meeting","work","💬"],["Cat play time","cat","🧶"]],
-    16: [["Focused work","work","🎯"],["Wrap up tasks","work","✅"],["Review the day","work","📈"],["Final push","work","🚀"],["Catnip time","cat","🌿"]],
-    17: [["End-of-day wrap","work","🌇"],["Plan tomorrow","work","📅"],["Inbox zero","work","📭"],["Day journal","rest","📔"],["Feed the cat","cat","🐟"]],
-    18: [["Gym","exercise","🏋️"],["Run","exercise","🏃"],["Yoga w/ cat","exercise","🧘"],["Walk","exercise","🚶"],["Cook dinner","meal","👨‍🍳"]],
-    19: [["Dinner","meal","🍝"],["Dinner w/ family","meal","🍲"],["Cook + eat","meal","🥘"],["Cozy dinner","meal","🍛"],["Cat watches dinner","cat","😻"]],
-    20: [["Read a book","study","📖"],["Online course","study","🎓"],["Hobby project","rest","🎨"],["Family time","rest","👨‍👩‍👧"],["Cat lap nap","cat","🐱"]],
-    21: [["Study session","study","📚"],["Side project","work","💡"],["Practice","study","✏️"],["Journal","rest","🖊️"],["Movie w/ cat","cat","🎬"]],
-    22: [["Wind down","rest","🌙"],["Light reading","study","📖"],["Stretch","exercise","🤸"],["Skincare","rest","🧴"],["Cat cuddle pile","cat","🐈"]],
-  };
-
-  function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-  // Each block: [startMin, endMin, hourKey (for pool)]
-  const DAY_BLOCKS = [
-    [0, 30, 7],       // 7:00-7:30
-    [30, 90, 8],      // 7:30-8:30
-    [120, 300, 9],    // 9:00-12:00
-    [300, 360, 12],   // 12:00-13:00
-    [360, 480, 14],   // 13:00-15:00
-    [480, 510, 15],   // 15:00-15:30
-    [510, 630, 16],   // 15:30-17:30
-    [630, 690, 18],   // 17:30-18:30
-    [690, 750, 19],   // 18:30-19:30
-    [750, 840, 20],   // 19:30-21:00
-    [840, 900, 21],   // 21:00-22:00
-    [900, 960, 22],   // 22:00-23:00
+  // ===== Sample week (Generate) — fills each weekday with a default routine using the 8 tasks =====
+  const SAMPLE_DAY = [
+    [0,   60,  'cleaning'], //  7:00 - 8:00 morning routine
+    [60,  120, 'work'],     //  8:00 - 9:00
+    [120, 300, 'work'],     //  9:00 - 12:00
+    [300, 360, 'ding'],     // 12:00 - 13:00 lunch break
+    [360, 600, 'work'],     // 13:00 - 17:00
+    [600, 660, 'exercise'], // 17:00 - 18:00
+    [660, 720, 'cleaning'], // 18:00 - 19:00 dinner prep
+    [720, 840, 'cat'],      // 19:00 - 21:00 cat time
+    [840, 900, 'hobby'],    // 21:00 - 22:00
+    [900, 960, 'sleep'],    // 22:00 - 23:00 wind down
   ];
 
   function generateWeek() {
     events = [];
     nextId = 1;
     for (let day = 0; day < 5; day++) {
-      DAY_BLOCKS.forEach(([s, e, hourKey]) => {
-        const pool = TASK_POOL[hourKey] || [["Free time","rest","✨"]];
-        const [task, category, emoji] = pickRandom(pool);
-        events.push({ id: nextId++, day, startMin: s, endMin: e, task, category, emoji });
+      SAMPLE_DAY.forEach(([s, e, taskId]) => {
+        const t = TASKS.find(x => x.id === taskId);
+        if (!t) return;
+        events.push({
+          id: nextId++, day, startMin: s, endMin: e,
+          task: t.label, category: t.category, emoji: t.emoji
+        });
       });
     }
     renderEvents();
@@ -1103,6 +1130,7 @@
 
   // ===== Init =====
   function init() {
+    buildTaskSelector();
     buildDayHeaders();
     buildTimeColumn();
     buildDayColumns();

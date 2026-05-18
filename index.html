@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 Cozy Cat Schedule 🐾</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f5ebd9;
+    --cream-light: #faf3e5;
+    --teal: #7fbfc4;
+    --teal-soft: #b5d8d9;
+    --coral: #d68876;
+    --coral-soft: #e8a896;
+    --brown: #5a3a2a;
+    --brown-light: #8b6b4f;
+    --tan: #c4a87c;
+    --text: #4a3220;
+    --text-soft: #8b6b4f;
+    --hour-line: rgba(91, 58, 42, 0.12);
+    --half-line: rgba(91, 58, 42, 0.05);
+    --hour-px: 56px;
+  }
+
+  body {
+    font-family: 'Quicksand', -apple-system, sans-serif;
+    background: var(--cream);
+    background-image:
+      radial-gradient(circle at 15% 25%, var(--teal-soft) 0%, transparent 15%),
+      radial-gradient(circle at 85% 75%, var(--coral-soft) 0%, transparent 18%),
+      radial-gradient(circle at 50% 50%, var(--cream-light) 0%, transparent 50%);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    width: 100%;
+    height: 12px;
+    background-image:
+      repeating-linear-gradient(90deg,
+        var(--coral) 0 20px,
+        var(--cream-light) 20px 40px,
+        var(--teal) 40px 60px,
+        var(--cream-light) 60px 80px);
+    opacity: 0.5;
+    z-index: 0;
+    pointer-events: none;
+  }
+  body::before { top: 0; }
+  body::after { bottom: 0; }
+
+  .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: rgba(255, 252, 245, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 16px 24px;
+    border-radius: 24px;
+    box-shadow: 0 6px 24px rgba(91, 58, 42, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-cat-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--cream-light);
+    box-shadow: 0 4px 12px rgba(91, 58, 42, 0.2);
+  }
+  h1 {
+    font-family: 'Caveat', cursive;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--brown);
+    line-height: 1;
+  }
+  .draggable-paw {
+    display: inline-block;
+    cursor: grab;
+    transition: transform 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .draggable-paw:hover {
+    transform: scale(1.25) rotate(-12deg);
+  }
+  .draggable-paw.dragging {
+    position: fixed !important;
+    cursor: grabbing;
+    z-index: 9999;
+    transition: none;
+    transform: scale(1.4) rotate(-8deg);
+    filter: drop-shadow(0 4px 8px rgba(91, 58, 42, 0.4));
+  }
+  .trail-paw {
+    position: fixed;
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 9998;
+    animation: trail-fade 1.4s ease-out forwards;
+  }
+  @keyframes trail-fade {
+    0%   { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+  .paw-reset {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    color: var(--text-soft);
+    cursor: pointer;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    text-decoration: underline dotted;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .paw-reset.visible { opacity: 1; }
+  .week-range {
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  .hint {
+    color: var(--brown);
+    font-size: 12px;
+    margin-top: 6px;
+    font-weight: 500;
+    opacity: 0.75;
+  }
+  .hint kbd {
+    display: inline-block;
+    background: var(--cream-light);
+    border: 1px solid rgba(91, 58, 42, 0.15);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    color: var(--brown);
+    margin: 0 2px;
+  }
+  .actions { display: flex; gap: 10px; }
+  button {
+    background: var(--coral);
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(214, 136, 118, 0.35);
+  }
+  button:hover {
+    transform: translateY(-2px);
+    background: #c97062;
+    box-shadow: 0 6px 16px rgba(214, 136, 118, 0.45);
+  }
+  button.secondary {
+    background: var(--teal);
+    box-shadow: 0 4px 12px rgba(127, 191, 196, 0.35);
+  }
+  button.secondary:hover {
+    background: #6aa9ae;
+    box-shadow: 0 6px 16px rgba(127, 191, 196, 0.45);
+  }
+
+  /* Calendar grid */
+  .calendar {
+    background: rgba(255, 252, 245, 0.85);
+    padding: 8px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(91, 58, 42, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+  }
+  .day-headers {
+    display: grid;
+    grid-template-columns: 60px repeat(5, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .day-header {
+    background: linear-gradient(135deg, var(--cream-light) 0%, #f0e3cb 100%);
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+  .day-header .day-name { color: var(--brown); }
+  .day-header .day-date {
+    color: var(--text-soft);
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 3px;
+  }
+  .day-header.today {
+    background: linear-gradient(135deg, var(--coral) 0%, var(--coral-soft) 100%);
+    box-shadow: 0 4px 12px rgba(214, 136, 118, 0.4);
+  }
+  .day-header.today .day-name,
+  .day-header.today .day-date { color: white; }
+  .day-header.time-corner {
+    background: linear-gradient(135deg, var(--coral-soft) 0%, var(--coral) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: white;
+  }
+
+  .body-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(5, 1fr);
+    gap: 4px;
+    position: relative;
+  }
+  .time-column {
+    position: relative;
+  }
+  .time-mark {
+    position: absolute;
+    right: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-soft);
+    transform: translateY(-50%);
+    background: var(--cream-light);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+  .day-column {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: crosshair;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+  .day-column.today {
+    background: linear-gradient(180deg, #fff4ee 0%, #fff8f3 100%);
+    box-shadow: inset 3px 0 0 var(--coral);
+  }
+
+  /* Current time indicator — spans whole calendar row, label sits in time column */
+  .now-line {
+    position: absolute;
+    left: 60px;
+    right: 0;
+    height: 2px;
+    background: var(--coral);
+    z-index: 4;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(214, 136, 118, 0.5);
+    border-radius: 1px;
+  }
+  .now-line::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    background: var(--coral);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(214, 136, 118, 0.25);
+  }
+  .now-label {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    background: var(--coral);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 0;
+    border-radius: 8px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-50%);
+    z-index: 6;
+    box-shadow: 0 2px 6px rgba(214, 136, 118, 0.4);
+  }
+  .time-mark.hidden-now { visibility: hidden; }
+
+  .hour-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--hour-line);
+    pointer-events: none;
+  }
+  .half-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--half-line);
+    pointer-events: none;
+  }
+
+  /* Paws shown when day column is empty */
+  .paws {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .paws.hidden { opacity: 0; }
+  .paw {
+    position: absolute;
+    font-size: 22px;
+    opacity: 0.35;
+    animation: paw-float 4s ease-in-out infinite;
+  }
+  @keyframes paw-float {
+    0%, 100% { transform: rotate(var(--rot, 0deg)) translateY(0); }
+    50% { transform: rotate(var(--rot, 0deg)) translateY(-4px); }
+  }
+
+  /* Event card */
+  .event {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    cursor: pointer;
+    border: 1.5px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 6px rgba(91, 58, 42, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    user-select: none;
+  }
+  .event:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 10px rgba(91, 58, 42, 0.18);
+    z-index: 10;
+  }
+  .event .event-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.2;
+  }
+  .event .event-emoji { font-size: 13px; }
+  .event .event-time {
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+  .event .event-delete {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--brown);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .event:hover .event-delete { opacity: 1; }
+  /* Touch devices: always show delete since there's no hover */
+  @media (hover: none) {
+    .event .event-delete { opacity: 0.85; }
+  }
+  .event[contenteditable="true"] { outline: 2px solid var(--coral); }
+
+  .event.work    { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
+  .event.meal    { background: linear-gradient(135deg, #fae3b8 0%, #f5d495 100%); }
+  .event.exercise { background: linear-gradient(135deg, #d0e8c0 0%, #b8d8a0 100%); }
+  .event.rest    { background: linear-gradient(135deg, #e5cfb8 0%, #d8be9c 100%); }
+  .event.study   { background: linear-gradient(135deg, #ecc4b8 0%, #e0aa9a 100%); }
+  .event.cat     { background: linear-gradient(135deg, #ffd4b0 0%, #ffbf90 100%); }
+
+  /* Ghost (drag preview) */
+  .ghost {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    background: rgba(214, 136, 118, 0.4);
+    border: 2px dashed var(--coral);
+    border-radius: 8px;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--brown);
+    z-index: 5;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-soft);
+    background: rgba(255, 252, 245, 0.7);
+    padding: 14px 22px;
+    border-radius: 16px;
+    font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(91, 58, 42, 0.15);
+  }
+
+  .cat-hero {
+    margin-top: 18px;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    height: 160px;
+    box-shadow: 0 8px 24px rgba(91, 58, 42, 0.18);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+  }
+  .cat-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 40%;
+  }
+  .cat-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(74, 50, 32, 0.7) 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 20px;
+  }
+  .cat-hero-text {
+    color: white;
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    text-align: center;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 14px;
+    color: var(--text-soft);
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+  }
+
+  @media (max-width: 768px) {
+    :root { --hour-px: 60px; }
+    body { padding: 10px; }
+    .calendar {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px;
+    }
+    .day-headers, .body-grid {
+      grid-template-columns: 44px repeat(5, 80px);
+      gap: 3px;
+      width: max-content;
+      min-width: 100%;
+    }
+    .day-header.time-corner,
+    .time-column {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+    }
+    .time-column { background: rgba(255, 252, 245, 0.95); }
+    .now-line { left: 44px; }
+    .now-label { font-size: 10px; padding: 2px 0; }
+    h1 { font-size: 22px; }
+    header { padding: 10px 14px; gap: 8px; margin-bottom: 12px; flex-wrap: nowrap; align-items: flex-start; }
+    .header-cat-img { width: 44px; height: 44px; border-width: 2px; }
+    .header-left { gap: 10px; flex: 1; min-width: 0; }
+    .week-range { font-size: 11px; margin-top: 2px; }
+    .hint { font-size: 11px; line-height: 1.5; margin-top: 5px; }
+    .hint kbd { font-size: 10px; padding: 0px 5px; }
+    .actions { flex-direction: column; gap: 6px; flex-shrink: 0; }
+    .day-header { padding: 8px 2px; font-size: 11px; }
+    .day-header .day-date { font-size: 9px; }
+    .day-header.time-corner { font-size: 16px; }
+    .time-mark { font-size: 10px; padding: 1px 4px; right: 3px; font-weight: 700; }
+    .event {
+      font-size: 11px;
+      padding: 4px 5px;
+      left: 2px;
+      right: 2px;
+      gap: 1px;
+    }
+    .event .event-emoji { font-size: 12px; }
+    .event .event-task { line-height: 1.2; }
+    .event .event-time { font-size: 9px; }
+    .event[data-short] .event-time { display: none; }
+    .event[data-short] .event-top { line-height: 1.15; }
+    .event[data-short] .event-task {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .event .event-delete { width: 22px; height: 22px; font-size: 14px; top: 3px; right: 3px; }
+    .paw { font-size: 18px; }
+    button { padding: 8px 12px; font-size: 11px; border-radius: 14px; }
+    .legend { gap: 8px; font-size: 11px; padding: 10px 14px; }
+    .cat-hero { height: 110px; margin-top: 14px; }
+    .cat-hero-text { font-size: 18px; }
+    .footer { font-size: 16px; margin-top: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-left">
+      <img src="cat-petting.png" alt="cozy cat" class="header-cat-img">
+      <div>
+        <h1>my cozy week <span class="draggable-paw" id="draggablePaw">🐾</span></h1>
+        <div class="week-range" id="weekRange"></div>
+        <div class="hint"><kbd>drag</kbd> a column to make an event · <kbd>click</kbd> to edit · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="secondary" id="clearBtn">🐾 Clear</button>
+      <button id="generateBtn">✨ Generate</button>
+    </div>
+  </header>
+
+  <div class="calendar">
+    <div class="day-headers" id="dayHeaders"></div>
+    <div class="body-grid">
+      <div class="time-column" id="timeColumn"></div>
+      <div class="day-column" data-day="0"></div>
+      <div class="day-column" data-day="1"></div>
+      <div class="day-column" data-day="2"></div>
+      <div class="day-column" data-day="3"></div>
+      <div class="day-column" data-day="4"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#b8d8dc"></span>💼 Work</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#f5d495"></span>🍰 Meal</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#b8d8a0"></span>🏃 Exercise</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#e0aa9a"></span>📚 Study</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#d8be9c"></span>💤 Rest</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#ffbf90"></span>🐱 Cat Time</div>
+  </div>
+
+  <div class="cat-hero">
+    <img src="cats-sleeping.png" alt="sleeping cats together">
+    <div class="cat-hero-overlay">
+      <div class="cat-hero-text">stay cozy this week 🐾 you've got this</div>
+    </div>
+  </div>
+
+  <div class="footer">made with 🐾 love 🐾 & lots of naps</div>
+</div>
+
+<script>
+  // ===== Constants =====
+  const START_HOUR = 7;
+  const END_HOUR = 23;
+  const TOTAL_HOURS = END_HOUR - START_HOUR; // 16
+  const TOTAL_MIN = TOTAL_HOURS * 60;        // 960
+  const SNAP_MIN = 15;
+  const MIN_EVENT_MIN = 15;
+  const DAYS = [
+    { name: "Mon", emoji: "🌿" },
+    { name: "Tue", emoji: "☕" },
+    { name: "Wed", emoji: "🌸" },
+    { name: "Thu", emoji: "🍂" },
+    { name: "Fri", emoji: "🌙" },
+  ];
+
+  function getHourPx() {
+    return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hour-px'));
+  }
+  function pxPerMin() { return getHourPx() / 60; }
+
+  // ===== State =====
+  let events = [];
+  let nextId = 1;
+
+  // ===== Date helpers =====
+  function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+  function formatDate(d) { return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+  function formatHour(h) {
+    if (h === 12) return "12pm";
+    if (h === 0) return "12am";
+    return h < 12 ? `${h}am` : `${h - 12}pm`;
+  }
+  function minToTimeStr(m) {
+    const total = START_HOUR * 60 + m;
+    const h = Math.floor(total / 60);
+    const min = total % 60;
+    const ampm = h < 12 ? 'am' : 'pm';
+    const dispH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${dispH}:${min.toString().padStart(2,'0')}${ampm}`;
+  }
+
+  // ===== Build static parts =====
+  function buildDayHeaders() {
+    const wrap = document.getElementById("dayHeaders");
+    wrap.innerHTML = "";
+
+    const corner = document.createElement("div");
+    corner.className = "day-header time-corner";
+    corner.textContent = "🐾";
+    wrap.appendChild(corner);
+
+    const monday = getMonday(new Date());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    DAYS.forEach((day, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const header = document.createElement("div");
+      header.className = "day-header";
+      if (d.getTime() === today.getTime()) {
+        header.classList.add("today");
+        document.querySelector(`.day-column[data-day="${i}"]`).classList.add("today");
+      }
+      header.innerHTML = `<div class="day-name">${day.emoji} ${day.name}</div><div class="day-date">${formatDate(d)}</div>`;
+      wrap.appendChild(header);
+    });
+
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+    document.getElementById("weekRange").textContent =
+      `${formatDate(monday)} – ${formatDate(friday)}, ${monday.getFullYear()}`;
+  }
+
+  function buildTimeColumn() {
+    const col = document.getElementById("timeColumn");
+    col.innerHTML = "";
+    col.style.height = (TOTAL_HOURS * getHourPx()) + "px";
+    for (let h = 0; h <= TOTAL_HOURS; h++) {
+      const mark = document.createElement("div");
+      mark.className = "time-mark";
+      mark.textContent = formatHour(START_HOUR + h);
+      mark.style.top = (h * getHourPx()) + "px";
+      col.appendChild(mark);
+    }
+  }
+
+  function buildDayColumns() {
+    document.querySelectorAll(".day-column").forEach(col => {
+      col.innerHTML = "";
+      col.style.height = (TOTAL_HOURS * getHourPx()) + "px";
+      // Hour grid lines
+      for (let h = 0; h <= TOTAL_HOURS; h++) {
+        const line = document.createElement("div");
+        line.className = "hour-line";
+        line.style.top = (h * getHourPx()) + "px";
+        col.appendChild(line);
+        if (h < TOTAL_HOURS) {
+          const half = document.createElement("div");
+          half.className = "half-line";
+          half.style.top = (h * getHourPx() + getHourPx()/2) + "px";
+          col.appendChild(half);
+        }
+      }
+      // Paws (shown when empty)
+      const paws = document.createElement("div");
+      paws.className = "paws";
+      const pawPositions = [
+        { t: 8,  l: 18, r: -18 },
+        { t: 22, l: 65, r: 12  },
+        { t: 38, l: 28, r: 8   },
+        { t: 52, l: 70, r: -10 },
+        { t: 68, l: 22, r: 18  },
+        { t: 82, l: 60, r: -22 },
+        { t: 92, l: 35, r: 10  },
+      ];
+      pawPositions.forEach(p => {
+        const paw = document.createElement("span");
+        paw.className = "paw";
+        paw.textContent = "🐾";
+        paw.style.top = p.t + "%";
+        paw.style.left = p.l + "%";
+        paw.style.setProperty('--rot', p.r + 'deg');
+        paws.appendChild(paw);
+      });
+      col.appendChild(paws);
+    });
+  }
+
+  function updatePawsVisibility() {
+    document.querySelectorAll(".day-column").forEach(col => {
+      const day = parseInt(col.dataset.day);
+      const has = events.some(ev => ev.day === day);
+      const paws = col.querySelector(".paws");
+      if (paws) paws.classList.toggle("hidden", has);
+    });
+  }
+
+  // Current-time indicator — line spans across all day columns, label in time column
+  function updateNowLine() {
+    document.querySelectorAll(".now-line, .now-label").forEach(el => el.remove());
+    document.querySelectorAll(".time-mark.hidden-now").forEach(el => el.classList.remove("hidden-now"));
+    // Only show if there's a "today" column visible in the week
+    if (!document.querySelector(".day-column.today")) return;
+    const now = new Date();
+    const minutesFromStart = (now.getHours() - START_HOUR) * 60 + now.getMinutes();
+    if (minutesFromStart < 0 || minutesFromStart > TOTAL_MIN) return;
+    const y = minutesFromStart * pxPerMin();
+
+    // Line across all day columns
+    const line = document.createElement("div");
+    line.className = "now-line";
+    line.style.top = y + "px";
+    document.querySelector(".body-grid").appendChild(line);
+
+    // Label in time column
+    const label = document.createElement("div");
+    label.className = "now-label";
+    label.style.top = y + "px";
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const ampm = h < 12 ? 'am' : 'pm';
+    const dispH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    label.textContent = `${dispH}:${m.toString().padStart(2,'0')}${ampm}`;
+    document.querySelector(".time-column").appendChild(label);
+
+    // Hide the time-mark closest to the now-label to avoid overlap
+    document.querySelectorAll(".time-mark").forEach(mark => {
+      const markTop = parseFloat(mark.style.top);
+      if (Math.abs(markTop - y) < 18) mark.classList.add("hidden-now");
+    });
+  }
+
+  // ===== Events render =====
+  function renderEvents() {
+    document.querySelectorAll(".day-column").forEach(col => {
+      col.querySelectorAll(".event").forEach(e => e.remove());
+    });
+
+    const ppm = pxPerMin();
+    events.forEach(ev => {
+      const col = document.querySelector(`.day-column[data-day="${ev.day}"]`);
+      if (!col) return;
+      const el = document.createElement("div");
+      el.className = `event ${ev.category}`;
+      el.dataset.id = ev.id;
+      el.style.top = (ev.startMin * ppm) + "px";
+      el.style.height = ((ev.endMin - ev.startMin) * ppm) + "px";
+      if ((ev.endMin - ev.startMin) <= 30) el.dataset.short = "1";
+      el.innerHTML = `
+        <div class="event-top"><span class="event-emoji">${ev.emoji}</span><span class="event-task">${escapeHtml(ev.task)}</span></div>
+        <div class="event-time">${minToTimeStr(ev.startMin)} – ${minToTimeStr(ev.endMin)}</div>
+        <span class="event-delete" data-action="delete">×</span>
+      `;
+      col.appendChild(el);
+    });
+    updatePawsVisibility();
+    updateNowLine();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ===== Drag to create =====
+  let dragState = null;
+
+  function getEventY(e, col) {
+    const rect = col.getBoundingClientRect();
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return Math.max(0, Math.min(col.offsetHeight, cy - rect.top));
+  }
+  function snapMin(min) {
+    return Math.max(0, Math.min(TOTAL_MIN, Math.round(min / SNAP_MIN) * SNAP_MIN));
+  }
+
+  function startDrag(e, col) {
+    if (e.target.closest(".event")) return;
+    // For mouse: preventDefault now. For touch: defer until vertical intent confirmed.
+    const isTouch = !!(e.touches && e.touches[0]);
+    if (!isTouch) e.preventDefault();
+    const y = getEventY(e, col);
+    const startX = isTouch ? e.touches[0].clientX : e.clientX;
+    const startY = isTouch ? e.touches[0].clientY : e.clientY;
+    const m = snapMin(y / pxPerMin());
+    dragState = {
+      col, day: parseInt(col.dataset.day),
+      startMin: m, currentMin: m,
+      startX, startY,
+      confirmed: !isTouch, // mouse drag is immediately confirmed
+      ghost: null,
+      isTouch
+    };
+    if (!isTouch) {
+      const ghost = document.createElement("div");
+      ghost.className = "ghost";
+      col.appendChild(ghost);
+      dragState.ghost = ghost;
+      updateGhost();
+    }
+  }
+  function updateGhost() {
+    if (!dragState || !dragState.ghost) return;
+    const a = Math.min(dragState.startMin, dragState.currentMin);
+    const b = Math.max(dragState.startMin, dragState.currentMin);
+    const ppm = pxPerMin();
+    dragState.ghost.style.top = (a * ppm) + "px";
+    dragState.ghost.style.height = Math.max(MIN_EVENT_MIN * ppm, (b - a) * ppm) + "px";
+    dragState.ghost.textContent = `${minToTimeStr(a)} – ${minToTimeStr(Math.max(b, a + MIN_EVENT_MIN))}`;
+  }
+  function moveDrag(e) {
+    if (!dragState) return;
+    const isTouch = !!(e.touches && e.touches[0]);
+    // Detect intent on first touch movement to allow horizontal scroll
+    if (isTouch && !dragState.confirmed) {
+      const cx = e.touches[0].clientX;
+      const cy = e.touches[0].clientY;
+      const dx = Math.abs(cx - dragState.startX);
+      const dy = Math.abs(cy - dragState.startY);
+      if (dx < 6 && dy < 6) return; // ignore tiny movements
+      if (dx > dy) {
+        // Horizontal pan — let the calendar scroll, abandon drag
+        dragState = null;
+        return;
+      }
+      // Vertical drag confirmed
+      dragState.confirmed = true;
+      const ghost = document.createElement("div");
+      ghost.className = "ghost";
+      dragState.col.appendChild(ghost);
+      dragState.ghost = ghost;
+    }
+    if (!dragState.confirmed) return;
+    e.preventDefault();
+    const y = getEventY(e, dragState.col);
+    dragState.currentMin = snapMin(y / pxPerMin());
+    updateGhost();
+  }
+  function endDrag(e) {
+    if (!dragState) return;
+    // Touch tap without confirmed vertical drag → don't create event
+    if (dragState.isTouch && !dragState.confirmed) {
+      dragState = null;
+      return;
+    }
+    const a = Math.min(dragState.startMin, dragState.currentMin);
+    let b = Math.max(dragState.startMin, dragState.currentMin);
+    if (b - a < MIN_EVENT_MIN) b = Math.min(TOTAL_MIN, a + 60); // single click = 1hr default
+    const startMin = a;
+    const endMin = b;
+    const day = dragState.day;
+    if (dragState.ghost) dragState.ghost.remove();
+    dragState = null;
+    // Generate a task suggestion based on start time
+    const hour = START_HOUR + Math.floor(startMin / 60);
+    const pool = TASK_POOL[hour] || [["New event","rest","✨"]];
+    const [task, category, emoji] = pickRandom(pool);
+    events.push({ id: nextId++, day, startMin, endMin, task, category, emoji });
+    renderEvents();
+  }
+
+  function bindColumnDrag(col) {
+    col.addEventListener("mousedown", e => startDrag(e, col));
+    col.addEventListener("touchstart", e => startDrag(e, col), { passive: false });
+  }
+
+  // ===== Event click (edit / delete) =====
+  function bindEventClicks() {
+    document.addEventListener("click", e => {
+      const eventEl = e.target.closest(".event");
+      if (!eventEl) return;
+      const id = parseInt(eventEl.dataset.id);
+      if (e.target.dataset.action === "delete") {
+        events = events.filter(ev => ev.id !== id);
+        renderEvents();
+        return;
+      }
+      // Edit task text inline
+      const ev = events.find(ev => ev.id === id);
+      if (!ev) return;
+      const taskSpan = eventEl.querySelector(".event-task");
+      const newText = prompt("Edit task:", ev.task);
+      if (newText !== null && newText.trim()) {
+        ev.task = newText.trim();
+        renderEvents();
+      }
+    });
+  }
+
+  // ===== Generate full week =====
+  const TASK_POOL = {
+    7:  [["Wake up & stretch","exercise","🙆"],["Feed the kitty","cat","🐱"],["Morning workout","exercise","💪"],["Cuddle the cat","cat","🐈"],["Warm breakfast","meal","🥞"]],
+    8:  [["Breakfast","meal","🥐"],["Plan the day","work","📝"],["Read news","study","📰"],["Coffee ☕","rest","☕"],["Cat brushing","cat","🐾"]],
+    9:  [["Deep focus","work","💻"],["Email triage","work","📧"],["Daily standup","work","👥"],["Project planning","work","📊"],["Watch cat nap","cat","😺"]],
+    10: [["Deep focus","work","💻"],["Code review","work","👨‍💻"],["Writing","work","✍️"],["Strategy session","work","🎯"],["Cat photo break","cat","📸"]],
+    11: [["Meeting","work","🗓️"],["Focused task","work","🔍"],["Calls","work","📞"],["Admin tasks","work","📋"],["Pet the cat","cat","🐱"]],
+    12: [["Lunch","meal","🍱"],["Lunch + walk","meal","🥗"],["Lunch break","meal","🍜"],["Quick lunch","meal","🍙"],["Lunch w/ team","meal","🍕"]],
+    13: [["Nap with cat","cat","😴"],["Walk outside","exercise","🚶"],["Slow start","rest","☁️"],["Cat tummy rubs","cat","🐈"],["Catch-up emails","work","📨"]],
+    14: [["Afternoon work","work","💼"],["Build session","work","🛠️"],["Research","study","🔬"],["1:1 meeting","work","🤝"],["Cat watches you","cat","🐱"]],
+    15: [["Coffee break","rest","☕"],["Snack + cat","meal","🍪"],["Quick walk","exercise","🚶"],["Sync meeting","work","💬"],["Cat play time","cat","🧶"]],
+    16: [["Focused work","work","🎯"],["Wrap up tasks","work","✅"],["Review the day","work","📈"],["Final push","work","🚀"],["Catnip time","cat","🌿"]],
+    17: [["End-of-day wrap","work","🌇"],["Plan tomorrow","work","📅"],["Inbox zero","work","📭"],["Day journal","rest","📔"],["Feed the cat","cat","🐟"]],
+    18: [["Gym","exercise","🏋️"],["Run","exercise","🏃"],["Yoga w/ cat","exercise","🧘"],["Walk","exercise","🚶"],["Cook dinner","meal","👨‍🍳"]],
+    19: [["Dinner","meal","🍝"],["Dinner w/ family","meal","🍲"],["Cook + eat","meal","🥘"],["Cozy dinner","meal","🍛"],["Cat watches dinner","cat","😻"]],
+    20: [["Read a book","study","📖"],["Online course","study","🎓"],["Hobby project","rest","🎨"],["Family time","rest","👨‍👩‍👧"],["Cat lap nap","cat","🐱"]],
+    21: [["Study session","study","📚"],["Side project","work","💡"],["Practice","study","✏️"],["Journal","rest","🖊️"],["Movie w/ cat","cat","🎬"]],
+    22: [["Wind down","rest","🌙"],["Light reading","study","📖"],["Stretch","exercise","🤸"],["Skincare","rest","🧴"],["Cat cuddle pile","cat","🐈"]],
+  };
+
+  function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // Each block: [startMin, endMin, hourKey (for pool)]
+  const DAY_BLOCKS = [
+    [0, 30, 7],       // 7:00-7:30
+    [30, 90, 8],      // 7:30-8:30
+    [120, 300, 9],    // 9:00-12:00
+    [300, 360, 12],   // 12:00-13:00
+    [360, 480, 14],   // 13:00-15:00
+    [480, 510, 15],   // 15:00-15:30
+    [510, 630, 16],   // 15:30-17:30
+    [630, 690, 18],   // 17:30-18:30
+    [690, 750, 19],   // 18:30-19:30
+    [750, 840, 20],   // 19:30-21:00
+    [840, 900, 21],   // 21:00-22:00
+    [900, 960, 22],   // 22:00-23:00
+  ];
+
+  function generateWeek() {
+    events = [];
+    nextId = 1;
+    for (let day = 0; day < 5; day++) {
+      DAY_BLOCKS.forEach(([s, e, hourKey]) => {
+        const pool = TASK_POOL[hourKey] || [["Free time","rest","✨"]];
+        const [task, category, emoji] = pickRandom(pool);
+        events.push({ id: nextId++, day, startMin: s, endMin: e, task, category, emoji });
+      });
+    }
+    renderEvents();
+  }
+
+  function clearAll() {
+    events = [];
+    renderEvents();
+  }
+
+  // ===== Draggable paw =====
+  function initDraggablePaw() {
+    const paw = document.getElementById("draggablePaw");
+    const resetBtn = document.getElementById("pawReset");
+    const homeParent = paw.parentNode;
+    let dragging = false;
+    let offX = 0, offY = 0;
+    let lastTrail = 0;
+    let movedDuringDrag = false;
+
+    function pointerXY(e) {
+      if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function spawnTrailPaw(x, y) {
+      const t = document.createElement("span");
+      t.className = "trail-paw";
+      t.textContent = "🐾";
+      const jitterX = (Math.random() * 14) - 7;
+      const jitterY = (Math.random() * 14) - 7;
+      const rot = (Math.random() * 80) - 40;
+      t.style.left = (x - 10 + jitterX) + "px";
+      t.style.top = (y - 10 + jitterY) + "px";
+      t.style.transform = `rotate(${rot}deg)`;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1400);
+    }
+
+    function onDown(e) {
+      e.preventDefault();
+      const { x, y } = pointerXY(e);
+      const rect = paw.getBoundingClientRect();
+      offX = x - rect.left;
+      offY = y - rect.top;
+      paw.classList.add("dragging");
+      paw.style.left = rect.left + "px";
+      paw.style.top = rect.top + "px";
+      dragging = true;
+      movedDuringDrag = false;
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      const { x, y } = pointerXY(e);
+      paw.style.left = (x - offX) + "px";
+      paw.style.top = (y - offY) + "px";
+      movedDuringDrag = true;
+      const now = performance.now();
+      if (now - lastTrail > 70) {
+        spawnTrailPaw(x, y);
+        lastTrail = now;
+      }
+    }
+    function onUp() {
+      if (!dragging) return;
+      dragging = false;
+      if (movedDuringDrag) resetBtn.classList.add("visible");
+    }
+
+    paw.addEventListener("mousedown", onDown);
+    paw.addEventListener("touchstart", onDown, { passive: false });
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("mouseup", onUp);
+    document.addEventListener("touchend", onUp);
+
+    resetBtn.addEventListener("click", () => {
+      paw.classList.remove("dragging");
+      paw.style.left = "";
+      paw.style.top = "";
+      resetBtn.classList.remove("visible");
+    });
+  }
+
+  // ===== Init =====
+  function init() {
+    buildDayHeaders();
+    buildTimeColumn();
+    buildDayColumns();
+    document.querySelectorAll(".day-column").forEach(bindColumnDrag);
+    document.addEventListener("mousemove", moveDrag);
+    document.addEventListener("mouseup", endDrag);
+    document.addEventListener("touchmove", moveDrag, { passive: false });
+    document.addEventListener("touchend", endDrag);
+    bindEventClicks();
+    document.getElementById("generateBtn").addEventListener("click", generateWeek);
+    document.getElementById("clearBtn").addEventListener("click", clearAll);
+    initDraggablePaw();
+
+    generateWeek();
+
+    // Scroll calendar so the now-line is roughly centered
+    requestAnimationFrame(() => {
+      const nowLine = document.querySelector(".now-line");
+      if (nowLine) {
+        const top = parseFloat(nowLine.style.top || "0");
+        const targetY = document.querySelector(".calendar").offsetTop + top - window.innerHeight / 2 + 100;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: "instant" });
+      }
+    });
+
+    // Refresh now-line every minute
+    setInterval(updateNowLine, 60000);
+
+    // Rebuild on resize (hour-px may change)
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        buildTimeColumn();
+        buildDayColumns();
+        document.querySelectorAll(".day-column").forEach(bindColumnDrag);
+        renderEvents();
+      }, 150);
+    });
+  }
+
+  init();
+</script>
+</body>
+</html>

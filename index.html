@@ -439,6 +439,77 @@
     transform: translateY(-1px);
   }
   .task-chip .task-emoji { font-size: 16px; }
+  /* Task picker modal (opens when clicking an event) */
+  .task-picker {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .task-picker.active { display: flex; }
+  .task-picker-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(74, 50, 32, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .task-picker-modal {
+    position: relative;
+    background: white;
+    border-radius: 22px;
+    padding: 18px 16px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 16px 48px rgba(91, 58, 42, 0.3);
+    animation: pop-in 0.18s ease-out;
+  }
+  @keyframes pop-in {
+    from { transform: scale(0.92); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .task-picker-header {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--brown);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .task-picker-sub {
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 11px;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .task-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .task-picker-grid .task-chip {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 9px 12px;
+  }
+  .task-picker-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: var(--text-soft);
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    box-shadow: none;
+  }
+  .task-picker-close:hover { color: var(--brown); background: none; }
+
   .task-chip.work     { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
   .task-chip.sleep    { background: linear-gradient(135deg, #e0d4f5 0%, #c8b8e8 100%); }
   .task-chip.exercise { background: linear-gradient(135deg, #d0e8c0 0%, #b8d8a0 100%); }
@@ -651,7 +722,7 @@
       <div>
         <h1>my cozy week <span class="draggable-paw" id="draggablePaw">🐾</span></h1>
         <div class="week-range" id="weekRange"></div>
-        <div class="hint">pick a task ↓ <kbd>drag</kbd> empty time to add · <kbd>click</kbd> event to change task · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
+        <div class="hint">pick a task ↓ then <kbd>drag</kbd> empty time · tap a block to <kbd>change</kbd> · <kbd>×</kbd> to delete<span class="paw-reset" id="pawReset">put paw back</span></div>
       </div>
     </div>
     <div class="actions">
@@ -683,6 +754,16 @@
   </div>
 
   <div class="footer">made with 🐾 love 🐾 & lots of naps</div>
+</div>
+
+<div class="task-picker" id="taskPicker" role="dialog" aria-modal="true">
+  <div class="task-picker-backdrop" data-close></div>
+  <div class="task-picker-modal">
+    <button class="task-picker-close" data-close type="button" aria-label="close">×</button>
+    <div class="task-picker-header">change task 🐾</div>
+    <div class="task-picker-sub">pick what this block should be</div>
+    <div class="task-picker-grid" id="taskPickerGrid"></div>
+  </div>
 </div>
 
 <script>
@@ -998,9 +1079,50 @@
     col.addEventListener("touchstart", e => startDrag(e, col), { passive: false });
   }
 
-  // ===== Event click — × deletes, body click recategorizes to selected task =====
+  // ===== Event click — × deletes, body click opens the task picker =====
+  let editingEventId = null;
+
+  function openTaskPicker(eventId) {
+    editingEventId = eventId;
+    const grid = document.getElementById('taskPickerGrid');
+    grid.innerHTML = '';
+    const ev = events.find(e => e.id === eventId);
+    TASKS.forEach(t => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `task-chip ${t.category}`;
+      if (ev && ev.category === t.category && ev.task === t.label) chip.classList.add('selected');
+      chip.innerHTML = `<span class="task-emoji">${t.emoji}</span><span class="task-label">${t.label}</span>`;
+      chip.addEventListener('click', () => applyTaskToEvent(t));
+      grid.appendChild(chip);
+    });
+    document.getElementById('taskPicker').classList.add('active');
+  }
+  function applyTaskToEvent(t) {
+    const ev = events.find(e => e.id === editingEventId);
+    if (ev) {
+      ev.task = t.label;
+      ev.category = t.category;
+      ev.emoji = t.emoji;
+      renderEvents();
+    }
+    closeTaskPicker();
+  }
+  function closeTaskPicker() {
+    document.getElementById('taskPicker').classList.remove('active');
+    editingEventId = null;
+  }
+
   function bindEventClicks() {
     document.addEventListener("click", e => {
+      // Close picker on backdrop / × click
+      if (e.target.dataset.close !== undefined) {
+        closeTaskPicker();
+        return;
+      }
+      // Ignore clicks inside the picker modal (the chips handle themselves)
+      if (e.target.closest('.task-picker-modal')) return;
+
       const eventEl = e.target.closest(".event");
       if (!eventEl) return;
       const id = parseInt(eventEl.dataset.id);
@@ -1009,13 +1131,11 @@
         renderEvents();
         return;
       }
-      // Click body → swap to currently selected task chip
-      const ev = events.find(ev => ev.id === id);
-      if (!ev) return;
-      ev.task = selectedTask.label;
-      ev.category = selectedTask.category;
-      ev.emoji = selectedTask.emoji;
-      renderEvents();
+      openTaskPicker(id);
+    });
+    // ESC to close
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeTaskPicker();
     });
   }
 

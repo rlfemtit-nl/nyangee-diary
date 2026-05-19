@@ -856,27 +856,56 @@
   let nextId = 1;
   let lastServerUpdatedAt = 0; // server's updatedAt of the last state we know about
 
-  // POST is debounced so a flurry of rapid edits batches into one upload.
+  // POST is lightly debounced so a flurry of rapid edits batches into one
+  // upload. Kept short (150ms) so a quick refresh after a single change still
+  // catches the POST.
   let saveTimer = null;
   let lastPostedSnapshot = null;
+  function buildSnapshot() {
+    return {
+      events,
+      nextId,
+      selectedTaskId: typeof selectedTask !== 'undefined' && selectedTask ? selectedTask.id : null,
+    };
+  }
+  function postSnapshot(snapshotJson) {
+    return fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: snapshotJson,
+      keepalive: true, // survives page navigation
+    }).then(r => r.json()).then(data => {
+      if (data && data.updatedAt) lastServerUpdatedAt = data.updatedAt;
+    }).catch(() => { /* next save retries */ });
+  }
   function saveState() {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      const snapshot = {
-        events,
-        nextId,
-        selectedTaskId: typeof selectedTask !== 'undefined' && selectedTask ? selectedTask.id : null,
-      };
-      lastPostedSnapshot = JSON.stringify(snapshot);
-      fetch('/api/state', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: lastPostedSnapshot,
-      }).then(r => r.json()).then(data => {
-        if (data && data.updatedAt) lastServerUpdatedAt = data.updatedAt;
-      }).catch(() => { /* network blip — next save retries */ });
-    }, 350);
+      saveTimer = null;
+      lastPostedSnapshot = JSON.stringify(buildSnapshot());
+      postSnapshot(lastPostedSnapshot);
+    }, 150);
   }
+  function flushPendingSave() {
+    if (!saveTimer) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    const snapshotJson = JSON.stringify(buildSnapshot());
+    // sendBeacon is fire-and-forget but guaranteed to be delivered even after
+    // the page unloads — without this, refreshing within 150ms of an edit
+    // (or quickly after) would lose the change.
+    if (navigator.sendBeacon) {
+      const blob = new Blob([snapshotJson], { type: 'application/json' });
+      navigator.sendBeacon('/api/state', blob);
+    } else {
+      postSnapshot(snapshotJson);
+    }
+  }
+  window.addEventListener('beforeunload', flushPendingSave);
+  window.addEventListener('pagehide', flushPendingSave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPendingSave();
+  });
 
   async function loadState() {
     try {

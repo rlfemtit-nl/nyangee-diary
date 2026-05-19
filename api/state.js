@@ -15,7 +15,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const meta = await head(PATH);
-      const r = await fetch(meta.url, { cache: 'no-store' });
+      // Cache-bust query param on the public blob URL — bypasses the Vercel
+      // Blob CDN that would otherwise serve a stale copy for up to its TTL,
+      // which is what made writes appear to "lag" for 1-3 page reloads.
+      const bustUrl = meta.url + (meta.url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      const r = await fetch(bustUrl, { cache: 'no-store' });
       if (!r.ok) {
         return res.status(200).json(DEFAULT_STATE);
       }
@@ -35,7 +39,6 @@ export default async function handler(req, res) {
     if (!body || typeof body !== 'object' || !Array.isArray(body.events)) {
       return res.status(400).json({ error: 'invalid body' });
     }
-    // Sanity-bound array size so a runaway client can't blow up the blob.
     if (body.events.length > 1000) {
       return res.status(413).json({ error: 'too many events' });
     }
@@ -46,6 +49,9 @@ export default async function handler(req, res) {
         contentType: 'application/json',
         addRandomSuffix: false,
         allowOverwrite: true,
+        // No CDN caching — every read must hit fresh storage. Without this
+        // the same public URL is cached for hours after each write.
+        cacheControlMaxAge: 0,
       });
       return res.status(200).json({ ok: true, updatedAt: body.updatedAt });
     } catch (e) {

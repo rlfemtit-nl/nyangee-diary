@@ -86,6 +86,43 @@
     object-fit: cover;
     border: 3px solid var(--cream-light);
     box-shadow: 0 4px 12px rgba(91, 58, 42, 0.2);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .header-cat-img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(91, 58, 42, 0.28);
+  }
+  .header-cat-img:active { transform: scale(0.97); }
+  .header-cat-img.playing {
+    animation: cat-purr 0.9s ease-in-out infinite;
+    border-color: var(--coral);
+  }
+  @keyframes cat-purr {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .cat-hint {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--coral);
+    color: white;
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(214, 136, 118, 0.4);
+    border: 2px solid white;
+    pointer-events: none;
+  }
+  .cat-img-wrap {
+    position: relative;
+    flex-shrink: 0;
   }
   h1 {
     font-family: 'Caveat', cursive;
@@ -777,7 +814,11 @@
 <div class="container">
   <header>
     <div class="header-left">
-      <img src="cat-petting.png" alt="cozy cat" class="header-cat-img">
+      <div class="cat-img-wrap" id="catSoundTrigger" role="button" tabindex="0" aria-label="play cat sound">
+        <img src="cat-petting.png" alt="cozy cat — tap to hear" class="header-cat-img" id="headerCatImg">
+        <span class="cat-hint" aria-hidden="true">🔊</span>
+      </div>
+      <audio id="catAudio" src="cat-sound.mp3" preload="auto"></audio>
       <div>
         <h1>my cozy week <span class="draggable-paw" id="draggablePaw">🐾</span></h1>
         <div class="week-range" id="weekRange"></div>
@@ -1485,6 +1526,29 @@
     document.getElementById("printBtn").addEventListener("click", () => window.print());
     document.getElementById("deleteEventBtn").addEventListener("click", deleteCurrentEvent);
     document.getElementById("okEventBtn").addEventListener("click", closeTaskPicker);
+
+    // Cat sound — tap the header cat image to play / stop the 16s clip.
+    const catAudio = document.getElementById("catAudio");
+    const catTrigger = document.getElementById("catSoundTrigger");
+    const catImg = document.getElementById("headerCatImg");
+    function toggleCatSound() {
+      if (!catAudio) return;
+      if (catAudio.paused) {
+        catAudio.currentTime = 0;
+        const p = catAudio.play();
+        if (p && p.catch) p.catch(() => {/* autoplay block; needs user gesture which this is */});
+        catImg.classList.add("playing");
+      } else {
+        catAudio.pause();
+        catAudio.currentTime = 0;
+        catImg.classList.remove("playing");
+      }
+    }
+    catTrigger.addEventListener("click", toggleCatSound);
+    catTrigger.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCatSound(); }
+    });
+    catAudio.addEventListener("ended", () => catImg.classList.remove("playing"));
     initDraggablePaw();
 
     // Print sizing — compress hour height so the whole table fits one A4 landscape page

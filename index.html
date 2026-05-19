@@ -323,7 +323,7 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--text);
-    overflow: hidden;
+    overflow: visible; /* let the × button poke out so it isn't cropped on short blocks */
     cursor: pointer;
     border: 1.5px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0 2px 6px rgba(91, 58, 42, 0.1);
@@ -343,18 +343,26 @@
     align-items: center;
     gap: 4px;
     line-height: 1.2;
+    overflow: hidden;
+    min-width: 0;
   }
-  .event .event-emoji { font-size: 13px; }
+  .event .event-emoji { font-size: 13px; flex-shrink: 0; }
+  .event .event-task {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
   /* Time inside a block — hidden by user request; users see only the label */
   .event .event-time { display: none !important; }
   .event .event-delete {
     position: absolute;
-    top: 2px;
-    right: 3px;
-    width: 22px;
-    height: 22px;
+    top: -6px;
+    right: -6px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.92);
+    background: white;
     color: var(--brown);
     font-size: 16px;
     font-weight: 700;
@@ -363,12 +371,15 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0.85;
-    transition: opacity 0.15s, transform 0.1s;
-    box-shadow: 0 1px 3px rgba(91, 58, 42, 0.18);
+    opacity: 0.95;
+    transition: opacity 0.15s, transform 0.1s, background 0.15s;
+    box-shadow: 0 2px 6px rgba(91, 58, 42, 0.25);
+    z-index: 5;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
-  .event:hover .event-delete { opacity: 1; }
-  .event-delete:active { transform: scale(0.9); }
+  .event:hover .event-delete { opacity: 1; background: #ffeaea; color: #c43030; }
+  .event-delete:active { transform: scale(0.85); background: #ffd0d0; }
   .event[contenteditable="true"] { outline: 2px solid var(--coral); }
 
   .event.work    { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
@@ -1182,24 +1193,34 @@
   }
 
   function bindEventClicks() {
+    // Use pointerdown for instant delete — no click delay, no race with the picker
+    document.addEventListener("pointerdown", e => {
+      const delBtn = e.target.closest('[data-action="delete"]');
+      if (!delBtn) return;
+      const eventEl = delBtn.closest('.event');
+      if (!eventEl) return;
+      const id = parseInt(eventEl.dataset.id);
+      events = events.filter(ev => ev.id !== id);
+      renderEvents();
+      saveState();
+      e.stopPropagation();
+      e.preventDefault();
+    }, true); // capture so we run before any other click handler
+
     document.addEventListener("click", e => {
       // Close picker on backdrop / × click
       if (e.target.dataset.close !== undefined) {
         closeTaskPicker();
         return;
       }
-      // Ignore clicks inside the picker modal (the chips handle themselves)
+      // Ignore clicks inside the picker modal
       if (e.target.closest('.task-picker-modal')) return;
+      // Ignore × on event (already handled in pointerdown above)
+      if (e.target.closest('[data-action="delete"]')) return;
 
       const eventEl = e.target.closest(".event");
       if (!eventEl) return;
       const id = parseInt(eventEl.dataset.id);
-      if (e.target.dataset.action === "delete") {
-        events = events.filter(ev => ev.id !== id);
-        renderEvents();
-        saveState();
-        return;
-      }
       openTaskPicker(id);
     });
     // ESC to close

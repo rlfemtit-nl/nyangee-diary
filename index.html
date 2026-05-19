@@ -345,35 +345,30 @@
     line-height: 1.2;
   }
   .event .event-emoji { font-size: 13px; }
-  .event .event-time {
-    font-size: 10px;
-    font-weight: 600;
-    opacity: 0.65;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
-  }
+  /* Time inside a block — hidden by user request; users see only the label */
+  .event .event-time { display: none !important; }
   .event .event-delete {
     position: absolute;
     top: 2px;
-    right: 4px;
-    width: 16px;
-    height: 16px;
+    right: 3px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--brown);
-    font-size: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s;
+    opacity: 0.85;
+    transition: opacity 0.15s, transform 0.1s;
+    box-shadow: 0 1px 3px rgba(91, 58, 42, 0.18);
   }
   .event:hover .event-delete { opacity: 1; }
-  /* Touch devices: always show delete since there's no hover */
-  @media (hover: none) {
-    .event .event-delete { opacity: 0.85; }
-  }
+  .event-delete:active { transform: scale(0.9); }
   .event[contenteditable="true"] { outline: 2px solid var(--coral); }
 
   .event.work    { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
@@ -509,6 +504,47 @@
     box-shadow: none;
   }
   .task-picker-close:hover { color: var(--brown); background: none; }
+  .task-picker-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e8d8c4;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 15px;
+    background: #fffaf2;
+    color: var(--text);
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  .task-picker-input:focus {
+    border-color: var(--coral);
+    box-shadow: 0 0 0 4px rgba(214, 136, 118, 0.15);
+  }
+  .task-picker-delete {
+    width: 100%;
+    background: linear-gradient(135deg, #ff9e9e 0%, #ff7676 100%);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 14px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(255, 118, 118, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .task-picker-delete:hover {
+    background: linear-gradient(135deg, #ff8a8a 0%, #ff5e5e 100%);
+    box-shadow: 0 6px 16px rgba(255, 118, 118, 0.4);
+  }
+  .task-picker-delete:active { transform: scale(0.98); }
 
   .task-chip.work     { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
   .task-chip.sleep    { background: linear-gradient(135deg, #e0d4f5 0%, #c8b8e8 100%); }
@@ -609,7 +645,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .event .event-delete { width: 22px; height: 22px; font-size: 14px; top: 3px; right: 3px; }
+    .event .event-delete { width: 26px; height: 26px; font-size: 17px; top: 3px; right: 3px; opacity: 0.95; }
     .paw { font-size: 18px; }
     .task-selector { padding: 8px; gap: 5px; margin-bottom: 10px; border-radius: 14px; }
     .task-chip { padding: 6px 10px; font-size: 11px; border-radius: 12px; gap: 4px; }
@@ -732,9 +768,11 @@
   <div class="task-picker-backdrop" data-close></div>
   <div class="task-picker-modal">
     <button class="task-picker-close" data-close type="button" aria-label="close">×</button>
-    <div class="task-picker-header">change task 🐾</div>
-    <div class="task-picker-sub">pick what this block should be</div>
+    <div class="task-picker-header">edit block 🐾</div>
+    <input type="text" id="taskPickerInput" class="task-picker-input" placeholder="what's happening?" autocomplete="off" maxlength="40">
+    <div class="task-picker-sub">pick a color</div>
     <div class="task-picker-grid" id="taskPickerGrid"></div>
+    <button class="task-picker-delete" id="deleteEventBtn" type="button">🗑️ delete this block</button>
   </div>
 </div>
 
@@ -967,8 +1005,7 @@
       if ((ev.endMin - ev.startMin) <= 30) el.dataset.short = "1";
       el.innerHTML = `
         <div class="event-top"><span class="event-emoji">${ev.emoji}</span><span class="event-task">${escapeHtml(ev.task)}</span></div>
-        <div class="event-time">${minToTimeStr(ev.startMin)} – ${minToTimeStr(ev.endMin)}</div>
-        <span class="event-delete" data-action="delete">×</span>
+        <span class="event-delete" data-action="delete" aria-label="delete">×</span>
       `;
       col.appendChild(el);
     });
@@ -1089,18 +1126,33 @@
 
   function openTaskPicker(eventId) {
     editingEventId = eventId;
+    const ev = events.find(e => e.id === eventId);
+    if (!ev) return;
+
+    // Pre-fill text input with the current block label
+    const input = document.getElementById('taskPickerInput');
+    input.value = ev.task;
+    input.oninput = () => {
+      const cur = events.find(e => e.id === editingEventId);
+      if (!cur) return;
+      cur.task = input.value;
+      renderEvents();
+      saveState();
+    };
+
+    // Build the chip grid — each chip swaps emoji + category live (and label too)
     const grid = document.getElementById('taskPickerGrid');
     grid.innerHTML = '';
-    const ev = events.find(e => e.id === eventId);
     TASKS.forEach(t => {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = `task-chip ${t.category}`;
-      if (ev && ev.category === t.category && ev.task === t.label) chip.classList.add('selected');
+      if (ev.category === t.category) chip.classList.add('selected');
       chip.innerHTML = `<span class="task-emoji">${t.emoji}</span><span class="task-label">${t.label}</span>`;
       chip.addEventListener('click', () => applyTaskToEvent(t));
       grid.appendChild(chip);
     });
+
     document.getElementById('taskPicker').classList.add('active');
   }
   function applyTaskToEvent(t) {
@@ -1109,9 +1161,19 @@
       ev.task = t.label;
       ev.category = t.category;
       ev.emoji = t.emoji;
+      document.getElementById('taskPickerInput').value = t.label;
+      document.querySelectorAll('#taskPickerGrid .task-chip').forEach(c =>
+        c.classList.toggle('selected', c.classList.contains(t.category))
+      );
       renderEvents();
       saveState();
     }
+  }
+  function deleteCurrentEvent() {
+    if (editingEventId == null) return;
+    events = events.filter(e => e.id !== editingEventId);
+    renderEvents();
+    saveState();
     closeTaskPicker();
   }
   function closeTaskPicker() {
@@ -1281,6 +1343,7 @@
     document.getElementById("generateBtn").addEventListener("click", generateWeek);
     document.getElementById("clearBtn").addEventListener("click", clearAll);
     document.getElementById("printBtn").addEventListener("click", () => window.print());
+    document.getElementById("deleteEventBtn").addEventListener("click", deleteCurrentEvent);
     initDraggablePaw();
 
     // Print sizing — compress hour height so the whole table fits one A4 landscape page

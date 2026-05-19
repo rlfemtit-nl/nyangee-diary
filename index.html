@@ -788,8 +788,34 @@
   function pxPerMin() { return getHourPx() / 60; }
 
   // ===== State =====
+  const STORAGE_KEY = 'nyangee-diary-v1';
   let events = [];
   let nextId = 1;
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        events,
+        nextId,
+        selectedTaskId: typeof selectedTask !== 'undefined' && selectedTask ? selectedTask.id : null,
+      }));
+    } catch (e) { /* quota / disabled — ignore */ }
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.events)) return null;
+      // Sanity-check each event
+      data.events = data.events.filter(ev =>
+        ev && typeof ev.day === 'number' && typeof ev.startMin === 'number' &&
+        typeof ev.endMin === 'number' && ev.endMin > ev.startMin &&
+        typeof ev.task === 'string' && typeof ev.category === 'string'
+      );
+      return data;
+    } catch (e) { return null; }
+  }
 
   // 8 selectable tasks — user picks one, then drags time
   const TASKS = [
@@ -823,6 +849,7 @@
     document.querySelectorAll('.task-chip').forEach(c => {
       c.classList.toggle('selected', c.dataset.taskId === t.id);
     });
+    saveState();
   }
 
   // ===== Date helpers =====
@@ -1072,6 +1099,7 @@
       emoji: selectedTask.emoji
     });
     renderEvents();
+    saveState();
   }
 
   function bindColumnDrag(col) {
@@ -1105,6 +1133,7 @@
       ev.category = t.category;
       ev.emoji = t.emoji;
       renderEvents();
+      saveState();
     }
     closeTaskPicker();
   }
@@ -1129,6 +1158,7 @@
       if (e.target.dataset.action === "delete") {
         events = events.filter(ev => ev.id !== id);
         renderEvents();
+        saveState();
         return;
       }
       openTaskPicker(id);
@@ -1167,6 +1197,7 @@
       });
     }
     renderEvents();
+    saveState();
   }
 
   function clearAll() {
@@ -1179,6 +1210,7 @@
     // Defensive: remove any stray event cards or drag-ghosts left over from interrupted interactions
     document.querySelectorAll(".calendar .event, .calendar .drag-ghost").forEach(el => el.remove());
     renderEvents();
+    saveState();
   }
 
   // ===== Draggable paw =====
@@ -1296,7 +1328,19 @@
       savedHourPx = null;
     });
 
-    generateWeek();
+    // Load saved schedule (or start blank). Never auto-generate on first visit.
+    const saved = loadState();
+    if (saved) {
+      events = saved.events;
+      nextId = (saved.nextId && Number.isFinite(saved.nextId))
+        ? saved.nextId
+        : (events.reduce((m, e) => Math.max(m, e.id || 0), 0) + 1);
+      if (saved.selectedTaskId) {
+        const t = TASKS.find(x => x.id === saved.selectedTaskId);
+        if (t) selectTask(t);
+      }
+    }
+    renderEvents();
 
     // Rebuild on resize (hour-px may change)
     let resizeTimer;

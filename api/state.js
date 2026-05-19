@@ -1,32 +1,37 @@
-// Shared schedule state — one JSON document in Vercel Blob storage.
-// GET  /api/state   → return current state
-// POST /api/state   → replace state (last-write-wins, fine for a small shared calendar)
+// Shared schedule state — stored in Vercel Blob.
 //
-// Every user sees the same data. Auth-free for now since this is a private
-// shared planner — anyone who knows the URL is trusted.
-import { put, head } from '@vercel/blob';
+// CDN caching was making same-URL overwrites appear stale for up to hours.
+// To get past that we write a NEW file per save (timestamp-stamped path),
+// then read the newest one via list(). Each write's URL is unique so the
+// CDN never has stale content to serve. Old versions are pruned to KEEP_N.
+import { put, list, del } from '@vercel/blob';
 
-const PATH = 'nyangee/state.json';
+const PREFIX = 'nyangee/state-';
+const KEEP_N = 3;
 const DEFAULT_STATE = { events: [], nextId: 1, selectedTaskId: 'work', updatedAt: 0 };
+
+function pickLatest(blobs) {
+  // pathname looks like nyangee/state-1779200000000.json. Sort by the
+  // embedded timestamp because uploadedAt clock can drift between regions.
+  return blobs
+    .map(b => ({ b, ts: Number((b.pathname.match(/state-(\d+)\.json$/) || [])[1] || 0) }))
+    .sort((a, z) => z.ts - a.ts)[0]?.b;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
 
   if (req.method === 'GET') {
     try {
-      const meta = await head(PATH);
-      // Cache-bust query param on the public blob URL — bypasses the Vercel
-      // Blob CDN that would otherwise serve a stale copy for up to its TTL,
-      // which is what made writes appear to "lag" for 1-3 page reloads.
-      const bustUrl = meta.url + (meta.url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-      const r = await fetch(bustUrl, { cache: 'no-store' });
-      if (!r.ok) {
-        return res.status(200).json(DEFAULT_STATE);
-      }
+      const { blobs } = await list({ prefix: PREFIX });
+      if (!blobs || !blobs.length) return res.status(200).json(DEFAULT_STATE);
+      const latest = pickLatest(blobs);
+      if (!latest) return res.status(200).json(DEFAULT_STATE);
+      const r = await fetch(latest.url, { cache: 'no-store' });
+      if (!r.ok) return res.status(200).json(DEFAULT_STATE);
       const data = await r.json();
       return res.status(200).json(data);
     } catch (e) {
-      // 404 (no blob yet) or any other error → return defaults
       return res.status(200).json(DEFAULT_STATE);
     }
   }
@@ -43,16 +48,22 @@ export default async function handler(req, res) {
       return res.status(413).json({ error: 'too many events' });
     }
     body.updatedAt = Date.now();
+    const path = `${PREFIX}${body.updatedAt}.json`;
     try {
-      await put(PATH, JSON.stringify(body), {
+      await put(path, JSON.stringify(body), {
         access: 'public',
         contentType: 'application/json',
         addRandomSuffix: false,
-        allowOverwrite: true,
-        // No CDN caching — every read must hit fresh storage. Without this
-        // the same public URL is cached for hours after each write.
-        cacheControlMaxAge: 0,
       });
+      // Prune older versions, best-effort — failures here don't affect the write.
+      try {
+        const { blobs } = await list({ prefix: PREFIX });
+        const sorted = blobs
+          .map(b => ({ b, ts: Number((b.pathname.match(/state-(\d+)\.json$/) || [])[1] || 0) }))
+          .sort((a, z) => z.ts - a.ts);
+        const oldUrls = sorted.slice(KEEP_N).map(x => x.b.url);
+        if (oldUrls.length) await del(oldUrls);
+      } catch {}
       return res.status(200).json({ ok: true, updatedAt: body.updatedAt });
     } catch (e) {
       return res.status(500).json({ error: String(e?.message || e) });

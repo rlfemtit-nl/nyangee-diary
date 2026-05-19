@@ -862,6 +862,11 @@
     return date;
   }
   function formatDate(d) { return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+  function ymd(d) {
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
   function formatHour(h) {
     if (h === 12) return "12pm";
     if (h === 0) return "12am";
@@ -1341,6 +1346,49 @@
       }
     }
     renderEvents();
+
+    // Keep dates fresh: poll every minute and rebuild the header row + paws
+    // if either the current Monday or today's date has changed. Cheap operation.
+    let lastMondayKey = ymd(getMonday(new Date()));
+    let lastTodayKey  = ymd(new Date());
+    setInterval(() => {
+      const m = ymd(getMonday(new Date()));
+      const t = ymd(new Date());
+      if (m !== lastMondayKey || t !== lastTodayKey) {
+        lastMondayKey = m;
+        lastTodayKey  = t;
+        buildDayHeaders();
+        // Re-tag the matching day-column as today
+        document.querySelectorAll(".day-column").forEach(c => c.classList.remove("today"));
+        const today = new Date(); today.setHours(0,0,0,0);
+        const mon = getMonday(new Date());
+        const dayIdx = Math.round((today - mon) / 86400000);
+        if (dayIdx >= 0 && dayIdx <= 4) {
+          const col = document.querySelector(`.day-column[data-day="${dayIdx}"]`);
+          if (col) col.classList.add("today");
+        }
+      }
+    }, 60_000);
+    // Also: when the tab regains focus (e.g. user comes back next morning) — refresh immediately
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        const m = ymd(getMonday(new Date()));
+        const t = ymd(new Date());
+        if (m !== lastMondayKey || t !== lastTodayKey) {
+          lastMondayKey = m;
+          lastTodayKey  = t;
+          buildDayHeaders();
+          document.querySelectorAll(".day-column").forEach(c => c.classList.remove("today"));
+          const today = new Date(); today.setHours(0,0,0,0);
+          const mon = getMonday(new Date());
+          const dayIdx = Math.round((today - mon) / 86400000);
+          if (dayIdx >= 0 && dayIdx <= 4) {
+            const col = document.querySelector(`.day-column[data-day="${dayIdx}"]`);
+            if (col) col.classList.add("today");
+          }
+        }
+      }
+    });
 
     // Rebuild on resize (hour-px may change)
     let resizeTimer;

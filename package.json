@@ -1,0 +1,9 @@
+{
+  "name": "nyangee-diary",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vercel/blob": "^2.3.3"
+  }
+}

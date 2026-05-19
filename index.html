@@ -851,34 +851,77 @@
   }
   function pxPerMin() { return getHourPx() / 60; }
 
-  // ===== State =====
-  const STORAGE_KEY = 'nyangee-diary-v1';
+  // ===== State (shared across all users via /api/state) =====
   let events = [];
   let nextId = 1;
+  let lastServerUpdatedAt = 0; // server's updatedAt of the last state we know about
 
+  // POST is debounced so a flurry of rapid edits batches into one upload.
+  let saveTimer = null;
+  let lastPostedSnapshot = null;
   function saveState() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const snapshot = {
         events,
         nextId,
         selectedTaskId: typeof selectedTask !== 'undefined' && selectedTask ? selectedTask.id : null,
-      }));
-    } catch (e) { /* quota / disabled — ignore */ }
+      };
+      lastPostedSnapshot = JSON.stringify(snapshot);
+      fetch('/api/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: lastPostedSnapshot,
+      }).then(r => r.json()).then(data => {
+        if (data && data.updatedAt) lastServerUpdatedAt = data.updatedAt;
+      }).catch(() => { /* network blip — next save retries */ });
+    }, 350);
   }
-  function loadState() {
+
+  async function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const data = JSON.parse(raw);
+      const r = await fetch('/api/state', { cache: 'no-store' });
+      if (!r.ok) return null;
+      const data = await r.json();
       if (!data || !Array.isArray(data.events)) return null;
-      // Sanity-check each event
+      // Sanity-filter each event
       data.events = data.events.filter(ev =>
         ev && typeof ev.day === 'number' && typeof ev.startMin === 'number' &&
         typeof ev.endMin === 'number' && ev.endMin > ev.startMin &&
         typeof ev.task === 'string' && typeof ev.category === 'string'
       );
       return data;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Periodic pull — picks up edits from other users while the tab is open.
+  // Skipped while the user is mid-drag or has the picker open so their work
+  // isn't yanked from under them.
+  async function pullIfIdle() {
+    if (document.hidden) return;
+    if (typeof dragState !== 'undefined' && dragState) return;
+    if (document.getElementById('taskPicker')?.classList.contains('active')) return;
+    // Skip if we have a pending save in flight
+    if (saveTimer) return;
+    const data = await loadState();
+    if (!data) return;
+    if (data.updatedAt && data.updatedAt === lastServerUpdatedAt) return; // unchanged
+    if (data.updatedAt) lastServerUpdatedAt = data.updatedAt;
+    events = data.events;
+    nextId = Number.isFinite(data.nextId) ? data.nextId
+      : events.reduce((m, e) => Math.max(m, e.id || 0), 0) + 1;
+    if (data.selectedTaskId && typeof TASKS !== 'undefined') {
+      const t = TASKS.find(x => x.id === data.selectedTaskId);
+      if (t && t.id !== (selectedTask && selectedTask.id)) {
+        selectedTask = t;
+        document.querySelectorAll('.task-chip').forEach(c => {
+          c.classList.toggle('selected', c.dataset.taskId === t.id);
+        });
+      }
+    }
+    renderEvents();
   }
 
   // 8 selectable tasks — user picks one, then drags time
@@ -1437,19 +1480,32 @@
       savedHourPx = null;
     });
 
-    // Load saved schedule (or start blank). Never auto-generate on first visit.
-    const saved = loadState();
-    if (saved) {
-      events = saved.events;
-      nextId = (saved.nextId && Number.isFinite(saved.nextId))
-        ? saved.nextId
-        : (events.reduce((m, e) => Math.max(m, e.id || 0), 0) + 1);
-      if (saved.selectedTaskId) {
-        const t = TASKS.find(x => x.id === saved.selectedTaskId);
-        if (t) selectTask(t);
+    // Load shared schedule from the server. Stays blank if there's nothing yet.
+    loadState().then(saved => {
+      if (saved) {
+        events = saved.events;
+        nextId = (saved.nextId && Number.isFinite(saved.nextId))
+          ? saved.nextId
+          : (events.reduce((m, e) => Math.max(m, e.id || 0), 0) + 1);
+        if (saved.updatedAt) lastServerUpdatedAt = saved.updatedAt;
+        if (saved.selectedTaskId) {
+          const t = TASKS.find(x => x.id === saved.selectedTaskId);
+          if (t) {
+            selectedTask = t;
+            document.querySelectorAll('.task-chip').forEach(c => {
+              c.classList.toggle('selected', c.dataset.taskId === t.id);
+            });
+          }
+        }
       }
-    }
-    renderEvents();
+      renderEvents();
+    });
+
+    // Poll for shared updates from other users — every 15s while visible.
+    setInterval(pullIfIdle, 15_000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') pullIfIdle();
+    });
 
     // Keep dates fresh: poll every minute and rebuild the header row + paws
     // if either the current Monday or today's date has changed. Cheap operation.

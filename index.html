@@ -225,7 +225,7 @@
   .day-header .day-name { color: var(--brown); }
   .day-header .day-date {
     color: var(--text-soft);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     margin-top: 3px;
   }
@@ -256,7 +256,7 @@
   .time-mark {
     position: absolute;
     right: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-soft);
     transform: translateY(-50%);
@@ -318,9 +318,9 @@
     position: absolute;
     left: 4px;
     right: 4px;
-    padding: 5px 8px;
+    padding: 6px 9px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text);
     overflow: visible; /* let the × button poke out so it isn't cropped on short blocks */
@@ -346,7 +346,7 @@
     overflow: hidden;
     min-width: 0;
   }
-  .event .event-emoji { font-size: 13px; flex-shrink: 0; }
+  .event .event-emoji { font-size: 15px; flex-shrink: 0; }
   .event .event-task {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -425,9 +425,9 @@
     background: white;
     color: var(--text);
     border: 2px solid transparent;
-    padding: 7px 12px;
+    padding: 8px 14px;
     border-radius: 14px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
@@ -607,65 +607,75 @@
   }
 
   @media (max-width: 768px) {
-    :root { --hour-px: 60px; }
+    :root { --hour-px: 64px; }
     body { padding: 10px; }
     .calendar {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: visible;
       padding: 6px;
     }
+    /* Fit all 5 days into viewport — no horizontal scroll. */
     .day-headers, .body-grid {
-      grid-template-columns: 44px repeat(5, 80px);
+      grid-template-columns: 38px repeat(5, 1fr);
       gap: 3px;
-      width: max-content;
-      min-width: 100%;
+      width: 100%;
+      min-width: 0;
     }
-    .day-header.time-corner,
-    .time-column {
-      position: sticky;
-      left: 0;
-      z-index: 5;
-    }
-    .time-column { background: rgba(255, 252, 245, 0.95); }
-    h1 { font-size: 22px; }
-    header { padding: 10px 14px; gap: 8px; margin-bottom: 12px; flex-wrap: nowrap; align-items: flex-start; }
-    .header-cat-img { width: 44px; height: 44px; border-width: 2px; }
-    .header-left { gap: 10px; flex: 1; min-width: 0; }
-    .week-range { font-size: 11px; margin-top: 2px; }
-    .hint { font-size: 11px; line-height: 1.5; margin-top: 5px; }
-    .hint kbd { font-size: 10px; padding: 0px 5px; }
-    .actions { flex-direction: column; gap: 6px; flex-shrink: 0; }
-    .day-header { padding: 8px 2px; font-size: 11px; }
-    .day-header .day-date { font-size: 9px; }
-    .day-header.time-corner { font-size: 16px; }
-    .time-mark { font-size: 10px; padding: 1px 4px; right: 3px; font-weight: 700; }
+    h1 { font-size: 26px; }
+    header { padding: 12px 14px; gap: 10px; margin-bottom: 12px; flex-wrap: nowrap; align-items: flex-start; }
+    .header-cat-img { width: 52px; height: 52px; border-width: 2px; }
+    .header-left { gap: 12px; flex: 1; min-width: 0; }
+    .week-range { font-size: 13px; margin-top: 2px; }
+    .hint { font-size: 12px; line-height: 1.5; margin-top: 5px; }
+    .hint kbd { font-size: 11px; padding: 1px 6px; }
+    .actions { flex-direction: column; gap: 7px; flex-shrink: 0; }
+    .day-header { padding: 9px 2px; font-size: 13px; }
+    .day-header .day-date { font-size: 11px; margin-top: 3px; }
+    .day-header.time-corner { font-size: 20px; }
+    .time-mark { font-size: 12px; padding: 1px 4px; right: 2px; font-weight: 700; }
     .event {
-      font-size: 11px;
-      padding: 4px 5px;
+      font-size: 13px;
+      padding: 5px 6px;
       left: 2px;
       right: 2px;
-      gap: 1px;
+      gap: 2px;
     }
-    .event .event-emoji { font-size: 12px; }
+    .event .event-emoji { font-size: 15px; }
     .event .event-task { line-height: 1.2; }
-    .event .event-time { font-size: 9px; }
-    .event[data-short] .event-time { display: none; }
     .event[data-short] .event-top { line-height: 1.15; }
     .event[data-short] .event-task {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .event .event-delete { width: 26px; height: 26px; font-size: 17px; top: 3px; right: 3px; opacity: 0.95; }
-    .paw { font-size: 18px; }
-    .task-selector { padding: 8px; gap: 5px; margin-bottom: 10px; border-radius: 14px; }
-    .task-chip { padding: 6px 10px; font-size: 11px; border-radius: 12px; gap: 4px; }
-    .task-chip .task-emoji { font-size: 14px; }
-    button { padding: 8px 12px; font-size: 11px; border-radius: 14px; }
-    .legend { gap: 8px; font-size: 11px; padding: 10px 14px; }
-    .cat-hero { height: 110px; margin-top: 14px; }
-    .cat-hero-text { font-size: 18px; }
-    .footer { font-size: 16px; margin-top: 10px; }
+    .event .event-delete { width: 26px; height: 26px; font-size: 18px; top: -7px; right: -7px; opacity: 1; }
+    .paw { font-size: 20px; }
+    .task-selector { padding: 10px; gap: 6px; margin-bottom: 12px; border-radius: 16px; }
+    .task-chip { padding: 8px 12px; font-size: 13px; border-radius: 14px; gap: 5px; }
+    .task-chip .task-emoji { font-size: 16px; }
+    button { padding: 10px 14px; font-size: 13px; border-radius: 16px; }
+    .legend { gap: 10px; font-size: 12px; padding: 12px 16px; }
+    .cat-hero { height: 130px; margin-top: 14px; }
+    .cat-hero-text { font-size: 22px; }
+    .footer { font-size: 18px; margin-top: 12px; }
+    /* Picker modal — give text input + chips more breathing room on phones */
+    .task-picker-modal { padding: 22px 18px; max-width: 380px; }
+    .task-picker-header { font-size: 26px; margin-bottom: 8px; }
+    .task-picker-sub { font-size: 12px; margin-bottom: 12px; }
+    .task-picker-input { padding: 14px 16px; font-size: 16px; border-radius: 16px; margin-bottom: 14px; }
+    .task-picker-grid { gap: 9px; }
+    .task-picker-grid .task-chip { padding: 11px 13px; font-size: 13px; }
+    .task-picker-grid .task-chip .task-emoji { font-size: 17px; }
+    .task-picker-delete { padding: 14px; font-size: 15px; margin-top: 16px; border-radius: 16px; }
+    .task-picker-close { font-size: 28px; padding: 6px 12px; top: 6px; right: 8px; }
+  }
+  @media (max-width: 380px) {
+    /* Narrow phones — tighten time column further so day columns can breathe */
+    .day-headers, .body-grid { grid-template-columns: 34px repeat(5, 1fr); gap: 2px; }
+    .event { padding: 4px 5px; font-size: 12px; }
+    .event .event-emoji { font-size: 14px; }
+    .time-mark { font-size: 11px; padding: 1px 2px; right: 1px; }
+    .day-header { font-size: 12px; padding: 8px 1px; }
+    .day-header .day-date { font-size: 10px; }
   }
 
   /* Print — keep the on-screen look (gradients, colors, layout) but fit one A4 page */

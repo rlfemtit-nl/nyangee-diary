@@ -621,95 +621,67 @@
     .footer { font-size: 16px; margin-top: 10px; }
   }
 
-  /* Print — only the table, one page */
+  /* Print — keep the on-screen look (gradients, colors, layout) but fit one A4 page */
   @media print {
-    @page { size: A4 landscape; margin: 8mm; }
+    @page { size: A4 landscape; margin: 6mm; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     html, body {
       background: white !important;
       padding: 0 !important;
       margin: 0 !important;
-      color: #1a1a1a !important;
-      width: 100% !important;
-      height: 100% !important;
+      color: var(--text) !important;
     }
+    /* Hide chrome — but keep the calendar exactly as on screen */
     body::before, body::after, .floating-cat,
-    header, .task-selector, .cat-hero, .footer, .paws { display: none !important; }
+    header, .task-selector, .cat-hero, .footer, .paws, .draggable-paw,
+    .legend, .event-delete { display: none !important; }
 
     .container { max-width: 100%; padding: 0 !important; margin: 0 !important; }
 
     .calendar {
       background: white !important;
-      padding: 0 !important;
+      padding: 4px !important;
       box-shadow: none !important;
-      border: 1.5px solid #333 !important;
+      border: none !important;
       overflow: visible !important;
       page-break-inside: avoid;
       margin: 0 !important;
     }
     .day-headers, .body-grid {
-      grid-template-columns: 42px repeat(5, 1fr) !important;
-      gap: 0 !important;
+      grid-template-columns: 46px repeat(5, 1fr) !important;
+      gap: 2px !important;
       width: 100% !important;
       min-width: 0 !important;
-      margin-bottom: 0 !important;
     }
+    .day-headers { margin-bottom: 4px !important; }
     .day-header {
-      background: #f0f0f0 !important;
-      color: #1a1a1a !important;
-      border: 1px solid #999 !important;
-      border-radius: 0 !important;
-      padding: 4px 4px !important;
-      box-shadow: none !important;
+      padding: 5px 4px !important;
       font-size: 11px !important;
     }
-    .day-header.today { background: #ddd !important; }
-    .day-header .day-name, .day-header .day-date { color: #1a1a1a !important; }
     .day-header .day-date { font-size: 9px !important; margin-top: 1px !important; }
-    .day-header.time-corner {
-      background: #e8e8e8 !important;
-      color: #333 !important;
-      font-size: 12px !important;
-    }
-    .time-column { position: static !important; background: white !important; }
+    .day-header.time-corner { font-size: 14px !important; padding: 5px 0 !important; }
+    .time-column { position: static !important; background: transparent !important; }
     .time-mark {
-      background: white !important;
-      color: #333 !important;
+      background: var(--cream-light) !important;
+      color: var(--text-soft) !important;
       font-size: 9px !important;
-      padding: 0 3px !important;
+      padding: 0 4px !important;
     }
     .day-column {
-      background: white !important;
-      border: 1px solid #ccc !important;
-      border-radius: 0 !important;
+      border-radius: 8px !important;
       box-shadow: none !important;
-      position: relative !important;
     }
-    .day-column.today { background: #fafafa !important; box-shadow: inset 2px 0 0 #555 !important; }
-    .hour-line { background: rgba(0,0,0,0.18) !important; }
-    .half-line { background: rgba(0,0,0,0.06) !important; }
     .event {
-      border: 1px solid #888 !important;
-      border-radius: 3px !important;
+      border-radius: 6px !important;
       box-shadow: none !important;
-      color: #111 !important;
-      font-size: 8px !important;
-      padding: 1px 3px !important;
+      font-size: 9px !important;
+      padding: 3px 5px !important;
       page-break-inside: avoid;
-      left: 1px !important;
-      right: 1px !important;
+      border: 1px solid rgba(255,255,255,0.9) !important;
     }
-    .event.work    { background: #d4e8ea !important; }
-    .event.sleep   { background: #e0d4f5 !important; }
-    .event.exercise { background: #d0e8c0 !important; }
-    .event.cat     { background: #ffd4b0 !important; }
-    .event.hobby   { background: #ffd4d6 !important; }
-    .event.study   { background: #ecc4b8 !important; }
-    .event.chore   { background: #c8e8e0 !important; }
-    .event.free    { background: #fae3b8 !important; }
-    .event .event-emoji { font-size: 9px !important; }
-    .event .event-time { font-size: 8px !important; opacity: 0.85 !important; color: #333 !important; }
-    .event .event-delete { display: none !important; }
+    .event .event-emoji { font-size: 11px !important; }
+    .event .event-time { font-size: 8px !important; opacity: 0.85 !important; }
+    .event[data-short] .event-time { display: none !important; }
   }
 </style>
 </head>
@@ -1322,7 +1294,7 @@
     }
     window.addEventListener("beforeprint", () => {
       savedHourPx = getComputedStyle(document.documentElement).getPropertyValue('--hour-px').trim() || '56px';
-      rebuildForPrint('38px');
+      rebuildForPrint('42px');
     });
     window.addEventListener("afterprint", () => {
       document.documentElement.style.removeProperty('--hour-px');

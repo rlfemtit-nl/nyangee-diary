@@ -533,8 +533,17 @@
     border-color: var(--coral);
     box-shadow: 0 0 0 4px rgba(214, 136, 118, 0.15);
   }
+  .task-picker-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .task-picker-actions > button {
+    flex: 1;
+    margin: 0 !important;
+    width: auto !important;
+  }
   .task-picker-delete {
-    width: 100%;
     background: linear-gradient(135deg, #ff9e9e 0%, #ff7676 100%);
     color: white;
     border: none;
@@ -543,7 +552,6 @@
     font-weight: 700;
     font-family: inherit;
     cursor: pointer;
-    margin-top: 14px;
     font-size: 14px;
     box-shadow: 0 4px 12px rgba(255, 118, 118, 0.3);
     display: flex;
@@ -556,6 +564,27 @@
     box-shadow: 0 6px 16px rgba(255, 118, 118, 0.4);
   }
   .task-picker-delete:active { transform: scale(0.98); }
+  .task-picker-ok {
+    background: linear-gradient(135deg, #a8d8b9 0%, #7fbf95 100%);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(127, 191, 149, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .task-picker-ok:hover {
+    background: linear-gradient(135deg, #95cea8 0%, #6aa980 100%);
+    box-shadow: 0 6px 16px rgba(127, 191, 149, 0.45);
+  }
+  .task-picker-ok:active { transform: scale(0.98); }
 
   .task-chip.work     { background: linear-gradient(135deg, #d4e8ea 0%, #b8d8dc 100%); }
   .task-chip.sleep    { background: linear-gradient(135deg, #e0d4f5 0%, #c8b8e8 100%); }
@@ -665,7 +694,8 @@
     .task-picker-grid { gap: 9px; }
     .task-picker-grid .task-chip { padding: 11px 13px; font-size: 13px; }
     .task-picker-grid .task-chip .task-emoji { font-size: 17px; }
-    .task-picker-delete { padding: 14px; font-size: 15px; margin-top: 16px; border-radius: 16px; }
+    .task-picker-actions { gap: 10px; margin-top: 16px; }
+    .task-picker-delete, .task-picker-ok { padding: 14px 10px; font-size: 14px; border-radius: 16px; }
     .task-picker-close { font-size: 28px; padding: 6px 12px; top: 6px; right: 8px; }
   }
   @media (max-width: 380px) {
@@ -793,7 +823,10 @@
     <input type="text" id="taskPickerInput" class="task-picker-input" placeholder="what's happening?" autocomplete="off" maxlength="40">
     <div class="task-picker-sub">pick a color</div>
     <div class="task-picker-grid" id="taskPickerGrid"></div>
-    <button class="task-picker-delete" id="deleteEventBtn" type="button">🗑️ delete this block</button>
+    <div class="task-picker-actions">
+      <button class="task-picker-delete" id="deleteEventBtn" type="button">🗑️ Delete</button>
+      <button class="task-picker-ok" id="okEventBtn" type="button">✓ OK</button>
+    </div>
   </div>
 </div>
 
@@ -1160,6 +1193,10 @@
       renderEvents();
       saveState();
     };
+    // Enter key in input = OK / close
+    input.onkeydown = e => {
+      if (e.key === "Enter") { e.preventDefault(); closeTaskPicker(); }
+    };
 
     // Build the chip grid — each chip swaps emoji + category live (and label too)
     const grid = document.getElementById('taskPickerGrid');
@@ -1375,6 +1412,7 @@
     document.getElementById("clearBtn").addEventListener("click", clearAll);
     document.getElementById("printBtn").addEventListener("click", () => window.print());
     document.getElementById("deleteEventBtn").addEventListener("click", deleteCurrentEvent);
+    document.getElementById("okEventBtn").addEventListener("click", closeTaskPicker);
     initDraggablePaw();
 
     // Print sizing — compress hour height so the whole table fits one A4 landscape page
